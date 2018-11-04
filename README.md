@@ -1,6 +1,13 @@
 # sses
 College subject - Security and safety in electroenergetic systems
 
+**NOTE:**
+  - This repository is used as a replication repository since we are using TFS repository as a main repository.
+  - List of collaborators:
+    - 
+    -
+    -
+
 **Assignment text:**
 
 Implement a banking system which is composed of the following components:
