@@ -10,6 +10,8 @@ College subject - Security and safety in electroenergetic systems
 
 **Assignment text:**
 
+**PROJECT 15**
+
 Implement a banking system which is composed of the following components:
   - **BANK**, has two roles:
     - Issuing MasterCard cards to its clients during the creation of a bank account. For needs of issuing a card, clients contact the bank 
