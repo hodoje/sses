@@ -5,7 +5,7 @@ College subject - Security and safety in electroenergetic systems
   - This repository is used as a replication repository since we are using TFS repository as a main repository.
   - List of collaborators:
     - https://github.com/TheLastHop3
-    -
+    - https://github.com/srki1925
     -
 
 **Assignment text:**
