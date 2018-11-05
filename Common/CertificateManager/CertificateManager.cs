@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Security;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -169,7 +170,8 @@ namespace Common.CertificateManager
                 new AsymmetricKeyEntry(subjectKeyPair.Private),
                 new X509CertificateEntry[] { certificateEntry });
 
-            var path = @".\certs\" + $"{friendlyName}.pfx";
+            var privatePath = @".\certs\" + $"{friendlyName}.pfx";
+            var publicPath = @".\certs\" + $"{friendlyName}.cer";
 
             using (var stream = new MemoryStream())
             {
@@ -182,7 +184,7 @@ namespace Common.CertificateManager
 
                 // Extract public part to store in server storage
                 var publicCert = dotNetCertificate.Export(X509ContentType.Cert);
-                // Extract private parameters to export into .pfx to send to client
+                // Extract private parameters to export into .pfx for distribution
                 var privateCert = dotNetCertificate.Export(X509ContentType.Pfx, pvkPass);
 
                 dotNetCertificate.Reset();
@@ -199,10 +201,11 @@ namespace Common.CertificateManager
                 dotNetCertificate.Dispose();
 
                 // Write private parameters to .pfx file to install at client
-                File.WriteAllBytes(path, privateCert);
+                File.WriteAllBytes(privatePath, privateCert);
+                File.WriteAllBytes(publicPath, publicCert);
             }
 
-            return path;
+            return privatePath;
         }
     }
 }

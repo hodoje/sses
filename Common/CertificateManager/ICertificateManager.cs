@@ -31,6 +31,7 @@ namespace Common.CertificateManager
         /// X509Certificate instance or null if invalid path.
         /// </returns>
         X509Certificate2 GetPublicCertificateFromFile(string filePath);
+
         /// <summary>
         /// Get full information from certificate file.
         /// </summary>
@@ -48,9 +49,9 @@ namespace Common.CertificateManager
         /// </summary>
         /// <param name="subjectName">Client name.</param>
         /// <param name="pvkPass">Password for client private key.</param>
-        /// <param name="signingCertificatePath">Path to signing certificate .pfx file.</param>
+        /// <param name="signingCertificate">Certificate to be used to sign new certificate.</param>
         /// <returns>
-        /// String containing path to .pfx file.
+        /// String containing path to generated .pfx file.
         /// </returns>
         string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 signingCertificate);
     }

@@ -76,6 +76,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -90,6 +91,9 @@
     <Compile Include="ServiceContracts\IBankAuditService.cs" />
     <Compile Include="ServiceContracts\IBankMasterCardService.cs" />
     <Compile Include="ServiceContracts\IBankTransactionService.cs" />
+    <Compile Include="Transaction\ITransaction.cs" />
+    <Compile Include="Transaction\NotEnoughResourcesException.cs" />
+    <Compile Include="Transaction\Transaction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
