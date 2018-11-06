@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BankServiceApp
@@ -17,6 +19,9 @@ namespace BankServiceApp
 
             var certPath =
                 CertificateManager.Instance.CreateAndStoreNewClientCertificate("CN=newCertificate", "pass", issuer);
+            var principal = Thread.CurrentPrincipal;
+            (principal.Identity as WindowsIdentity).Impersonate();
+
             Console.WriteLine(certPath);
             Console.ReadLine();
         }

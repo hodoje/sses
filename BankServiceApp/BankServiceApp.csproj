@@ -87,8 +87,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AccountStorage\AccountStorage.cs" />
+    <Compile Include="AccountStorage\IAccountStorage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Replicator\IReplicationService.cs" />
+    <Compile Include="Replicator\ReplicationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

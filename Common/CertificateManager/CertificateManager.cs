@@ -164,7 +164,9 @@ namespace Common.CertificateManager
             string friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
 
             var certificateEntry = new X509CertificateEntry(newCertificate);
+            // Set certificate
             store.SetCertificateEntry(friendlyName, certificateEntry);
+            // Set private key
             store.SetKeyEntry(
                 friendlyName,
                 new AsymmetricKeyEntry(subjectKeyPair.Private),

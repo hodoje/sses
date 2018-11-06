@@ -15,7 +15,7 @@ namespace Common.Transaction
     {
         public NotEnoughResourcesException() : base("Not enough resources on account.")
         {
-            
+            //throw new FaultException<NotEnoughResourcesException>(new NotEnoughResourcesException());
         }
 
         public NotEnoughResourcesException(string message) : base(message)

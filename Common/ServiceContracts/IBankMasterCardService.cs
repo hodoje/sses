@@ -20,7 +20,7 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        bool RequestNewCard(short pin);
+        bool RequestNewCard(string pin);
 
         /// <summary>
         /// Revoke existing certificate given to client.
@@ -31,6 +31,6 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        bool RevokeExistingCard(short pin);
+        bool RevokeExistingCard(string pin);
     }
 }

@@ -94,6 +94,10 @@
     <Compile Include="Transaction\ITransaction.cs" />
     <Compile Include="Transaction\NotEnoughResourcesException.cs" />
     <Compile Include="Transaction\Transaction.cs" />
+    <Compile Include="UserData\Account.cs" />
+    <Compile Include="UserData\Client.cs" />
+    <Compile Include="UserData\IAccount.cs" />
+    <Compile Include="UserData\IClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
