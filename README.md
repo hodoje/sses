@@ -7,7 +7,7 @@ College subject - Security and safety in electroenergetic systems
   - List of collaborators:
     - https://github.com/TheLastHop3
     - https://github.com/srki1925
-    -
+    - https://github.com/fgbjoki
 
 **Assignment text:**
 
