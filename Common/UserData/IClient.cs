@@ -13,5 +13,7 @@ namespace Common.UserData
         IAccount Account { get; }
 
         void ResetPin(string oldPin, string newPin);
+
+        bool CheckPin(string pin);
     }
 }

@@ -28,6 +28,11 @@ namespace Common.UserData
             if (Pin.Equals(oldPinHash, StringComparison.OrdinalIgnoreCase)) Pin = GetPinHash(newPin);
         }
 
+        public bool CheckPin(string pin)
+        {
+            return Pin.Equals(GetPinHash(pin));
+        }
+
         private string GetPinHash(string pin)
         {
             string pinHash;
