@@ -55,7 +55,7 @@ namespace Common.CertificateManager
 
         private CertificateManager()
         {
-
+         
         }
 
         public X509Certificate2 GetCertificateFromStore(StoreLocation storeLocation, StoreName storeName, string subjectName)
