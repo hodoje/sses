@@ -15,11 +15,11 @@ namespace Common.ServiceContracts
         /// <summary>
         /// Request new card certificate creation.
         /// </summary>
-        /// <param name="pin">Pin for two factor auth.</param>
         /// <returns>
-        /// True if new card certificate is successfully created.
+        /// NewCardResults that contains all information that is relevant to client
         /// </returns>
         [OperationContract]
+        [FaultContract(typeof(CustomServiceException))]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
         NewCardResults RequestNewCard();
 
@@ -31,7 +31,20 @@ namespace Common.ServiceContracts
         /// True if existing card is successfully revoked.
         /// </returns>
         [OperationContract]
+        [FaultContract(typeof(CustomServiceException))]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
         bool RevokeExistingCard(string pin);
+
+        /// <summary>
+        /// Request password reset.
+        /// </summary>
+        /// <returns>
+        /// NewCardResults that contains all information that is relevant to client
+        /// </returns>
+        [OperationContract]
+        [FaultContract(typeof(CustomServiceException))]
+        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
+        NewCardResults RequestResetPassowrd(string pin);
+
     }
 }
