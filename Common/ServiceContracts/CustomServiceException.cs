@@ -9,21 +9,13 @@ namespace Common.ServiceContracts
 
     public class CustomServiceException : Exception
     {
-        private string strMessage;
-
-        public CustomServiceException()
+        public CustomServiceException() : base("An unknown exception occurred")
         {
-            strMessage = "An unknown exception occurred";
+
         }
 
-        public CustomServiceException(string Message)
+        public CustomServiceException(string Message) : base(Message)
         {
-            strMessage = Message;
-        }
-
-        public override string Message
-        {
-            get => strMessage;
         }
     }
 }

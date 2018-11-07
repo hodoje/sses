@@ -79,6 +79,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.OracleClient" />
     <Reference Include="System.Drawing" />
@@ -96,11 +97,13 @@
   <ItemGroup>
     <Compile Include="AccountStorage\AccountStorage.cs" />
     <Compile Include="AccountStorage\IAccountStorage.cs" />
+    <Compile Include="BankAppConfig.cs" />
     <Compile Include="BankServices\BankMasterCardService.cs" />
     <Compile Include="BankServices\BankTransactionService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replicator\IReplicationService.cs" />
+    <Compile Include="Replicator\IReplicator.cs" />
     <Compile Include="Replicator\ReplicationService.cs" />
     <Compile Include="BankServicesHost.cs" />
     <Compile Include="ServiceHosts\IServiceHost.cs" />

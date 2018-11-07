@@ -15,6 +15,12 @@ namespace BankServiceApp.BankServices
     public class BankMasterCardService : IBankMasterCardService
     {
         X509Certificate2 _issuer;
+
+        public BankMasterCardService()
+        {
+            
+        }
+
         public BankMasterCardService(X509Certificate2 issuer)
         {
             _issuer = issuer;

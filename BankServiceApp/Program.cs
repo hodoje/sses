@@ -6,6 +6,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BankServiceApp.Replicator;
 
 namespace BankServiceApp
 {
@@ -23,10 +24,15 @@ namespace BankServiceApp
               (principal.Identity as WindowsIdentity).Impersonate();
 
               Console.WriteLine(certPath);*/
-            BankServicesHost bankServicesHost = new BankServicesHost();
-            bankServicesHost.OpenService();          
+            //BankServicesHost bankServicesHost = new BankServicesHost();
+            //bankServicesHost.OpenService();          
+            //Console.ReadLine();
+            //bankServicesHost.CloseService();
+
+            ReplicationService replicationService = new ReplicationService();
+            replicationService.RegisterService(new BankServicesHost());
+            replicationService.OpenServices();
             Console.ReadLine();
-            bankServicesHost.CloseService();
         }
     }
 }

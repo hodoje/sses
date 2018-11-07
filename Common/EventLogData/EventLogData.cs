@@ -30,10 +30,10 @@ namespace Common.EventLogData
 
         public EventLogData(string bankName, string accountName, DateTime detectionTime, string logMessage)
         {
-            BankName = !String.IsNullOrWhiteSpace(bankName) ? bankName : throw new ArgumentNullException(nameof(bankName));
-            AccountName = !String.IsNullOrWhiteSpace(accountName) ? accountName : throw new ArgumentNullException(nameof(accountName));
+            BankName = !string.IsNullOrWhiteSpace(bankName) ? bankName : throw new ArgumentNullException(nameof(bankName));
+            AccountName = !string.IsNullOrWhiteSpace(accountName) ? accountName : throw new ArgumentNullException(nameof(accountName));
             DetectionTime = !(DateTime.MinValue == detectionTime) ? detectionTime : throw new ArgumentOutOfRangeException(nameof(detectionTime));
-            LogMessage = !String.IsNullOrWhiteSpace(logMessage) ? logMessage : throw new ArgumentNullException(nameof(logMessage));
+            LogMessage = !string.IsNullOrWhiteSpace(logMessage) ? logMessage : throw new ArgumentNullException(nameof(logMessage));
         }
     }
 }
