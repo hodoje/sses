@@ -77,7 +77,7 @@ namespace BankServiceApp.BankServices
             throw new NotImplementedException();
         }
 
-        public NewCardResults RequestResetPassowrd(string pin)
+        public NewCardResults RequestResetPin(string pin)
         {
             // TODO (JOKI) Check clients credentials
 

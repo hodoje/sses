@@ -44,7 +44,7 @@ namespace Common.ServiceContracts
         [OperationContract]
         [FaultContract(typeof(CustomServiceException))]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        NewCardResults RequestResetPassowrd(string pin);
+        NewCardResults RequestResetPin(string pin);
 
     }
 }
