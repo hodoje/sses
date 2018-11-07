@@ -25,5 +25,10 @@ namespace Common.Transaction
         /// Delta to be processed.
         /// </summary>
         decimal Amount { get; }
+
+        /// <summary>
+        /// Pin to verify user.
+        /// </summary>
+        string Pin { get; }
     }
 }

@@ -16,10 +16,11 @@ namespace Common.Transaction
             
         }
 
-        public Transaction(TransactionType type, decimal amount)
+        public Transaction(TransactionType type, decimal amount, string pin)
         {
             TransactionType = type;
             Amount = amount;
+            Pin = pin;
         }
 
         [DataMember]
@@ -27,5 +28,8 @@ namespace Common.Transaction
 
         [DataMember]
         public decimal Amount { get; private set; }
+
+        [DataMember]
+        public string Pin { get; private set; }
     }
 }

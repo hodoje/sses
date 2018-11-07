@@ -92,10 +92,10 @@ namespace ClientApp
                         cert = GetCert(pathCert);
                         Console.WriteLine("How much money do you wish to withdrawal?");
                         decimal.TryParse(Console.ReadLine(),out amount);
-                        transaction = new Transaction(TransactionType.Withdrawal, amount);
-                        signature = Sign(cert, transaction);
                         Console.WriteLine("Enter your pin:");
                         pin = Console.ReadLine();
+                        transaction = new Transaction(TransactionType.Withdrawal, amount, pin);
+                        signature = Sign(cert, transaction);
                         amount = clientProxy.ExecuteTransaction(signature, pin);
                         Console.WriteLine("Your new balance is {0}",amount);
                         break;
@@ -104,10 +104,10 @@ namespace ClientApp
                         cert = GetCert(pathCert);
                         Console.WriteLine("How much money do you wish to deposit?");
                         decimal.TryParse(Console.ReadLine(), out amount);
-                        transaction = new Transaction(TransactionType.Deposit, amount);
-                        signature = Sign(cert, transaction);
                         Console.WriteLine("Enter your pin:");
                         pin = Console.ReadLine();
+                        transaction = new Transaction(TransactionType.Deposit, amount, pin);
+                        signature = Sign(cert, transaction);
                         amount = clientProxy.ExecuteTransaction(signature, pin);
                         Console.WriteLine("Your new balance is {0}", amount);
 
@@ -115,10 +115,10 @@ namespace ClientApp
 
                     case '3'://CheckBalance
                         cert = GetCert(pathCert);
-                        transaction = new Transaction(TransactionType.CheckBalance, 0);
-                        signature = Sign(cert, transaction);
                         Console.WriteLine("Enter your pin:");
                         pin = Console.ReadLine();
+                        transaction = new Transaction(TransactionType.CheckBalance, 0, pin);
+                        signature = Sign(cert, transaction);
                         amount = clientProxy.ExecuteTransaction(signature, pin);
                         Console.WriteLine("Your current balance is {0}", amount);
                         break;
