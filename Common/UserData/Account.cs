@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Common.Transaction;
 namespace Common.UserData
 {
     [Serializable]
+    [DataContract]
     public class Account : IAccount
     {
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
@@ -24,6 +26,7 @@ namespace Common.UserData
             Balance = initialBalance;
         }
 
+        [DataMember]
         public decimal Balance
         {
             get

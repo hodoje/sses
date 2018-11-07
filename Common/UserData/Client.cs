@@ -1,15 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Common.UserData
 {
+    [DataContract]
+    [Serializable]
     public class Client : IClient
     {
+        public Client()
+        {
+            
+        }
+
         public Client(string name, IAccount account, string pin)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -17,8 +21,13 @@ namespace Common.UserData
             Pin = GetPinHash(pin ?? throw new ArgumentNullException(nameof(account)));
         }
 
+        [DataMember]
         public string Name { get; private set; }
+
+        [DataMember]
         public string Pin { get; private set; }
+
+        [DataMember]
         public IAccount Account { get; private set; }
 
         public virtual void ResetPin(string oldPin, string newPin)
