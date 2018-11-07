@@ -22,6 +22,6 @@ namespace Common.Transaction
         /// <summary>
         /// Delta to be processed.
         /// </summary>
-        decimal Delta { get; }
+        decimal Amount { get; }
     }
 }

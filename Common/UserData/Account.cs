@@ -8,10 +8,16 @@ using Common.Transaction;
 
 namespace Common.UserData
 {
+    [Serializable]
     public class Account : IAccount
     {
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private decimal _balance;
+
+        public Account()
+        {
+            
+        }
 
         public Account(decimal initialBalance = 0m)
         {
