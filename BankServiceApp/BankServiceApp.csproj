@@ -89,6 +89,8 @@
   <ItemGroup>
     <Compile Include="AccountStorage\AccountStorage.cs" />
     <Compile Include="AccountStorage\IAccountStorage.cs" />
+    <Compile Include="BankContracts\BankMasterCardService.cs" />
+    <Compile Include="BankContracts\BankTransactionService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replicator\IReplicationService.cs" />
