@@ -1,4 +1,5 @@
-﻿using Common.ServiceContracts;
+﻿using Common.DataEncapsulation;
+using Common.ServiceContracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,9 @@ namespace BankServiceApp.BankServices
 {
     public class BankMasterCardService : IBankMasterCardService
     {
-        public bool RequestNewCard(string pin)
+      
+
+        public NewCardResults RequestNewCard()
         {
             throw new NotImplementedException();
         }

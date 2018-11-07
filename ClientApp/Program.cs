@@ -17,6 +17,9 @@ namespace ClientApp
         static void Main(string[] args)
         {
 
+            ClientProxy clientProxy = new ClientProxy();
+            Console.WriteLine("Connected to service..");
+            Console.ReadLine();
        
         }
     }

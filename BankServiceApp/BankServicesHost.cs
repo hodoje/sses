@@ -7,24 +7,27 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using BankServiceApp.ServiceHosts;
+using Common.CertificateManager;
+using System.Security.Cryptography.X509Certificates;
 
 namespace BankServiceApp
 {
     public class BankServicesHost : IServiceHost, IDisposable
     {
         private ServiceHost cardHost = null;
-        private string cardAddress = String.Empty;
-
+        private string cardAddress = "net.tcp://localhost:9999/BankMasterCardService";
+        private string srvCerCn = String.Empty;
         private NetTcpBinding binding = new NetTcpBinding();
 
         public BankServicesHost()
         {
-            InitBinding();
+            SetUpBinding();
             cardHost = new ServiceHost(typeof(BankMasterCardService));
             cardHost.AddServiceEndpoint(typeof(IBankMasterCardService), binding, cardAddress);
+           // cardHost.Credentials.ServiceCertificate.Certificate = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, srvCerCn);
         }
 
-        private void InitBinding()
+        private void SetUpBinding()
         {
             binding.Security.Mode = SecurityMode.Transport;
             binding.Security.Transport.ProtectionLevel =
@@ -33,7 +36,7 @@ namespace BankServiceApp
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
         }
 
-        private void CardOpen()
+        private void CardServiceOpen()
         {
             try
             {
@@ -46,7 +49,7 @@ namespace BankServiceApp
             }
         }
 
-        private void CardClose()
+        private void CardServiceClose()
         {
             try
             {
@@ -59,7 +62,7 @@ namespace BankServiceApp
             }
         }
 
-        private void TransationOpen()
+        private void TransationServiceOpen()
         {
             try
             {
@@ -72,7 +75,7 @@ namespace BankServiceApp
             }
         }
 
-        private void TransationClose()
+        private void TransationServiceClose()
         {
             try
             {
@@ -87,14 +90,16 @@ namespace BankServiceApp
 
         public void OpenService()
         {
-            CardOpen();
-            TransationOpen();
+            CardServiceOpen();
+            Console.WriteLine("CardServiceHost is opened..");
+            TransationServiceOpen();
+            Console.WriteLine("TransationServiceHost is opened..");
         }
 
         public void CloseService()
         {
-            TransationClose();
-            CardClose();
+            TransationServiceClose();
+            CardServiceClose();
         }
 
         public void Dispose()
