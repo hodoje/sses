@@ -75,7 +75,18 @@ namespace ClientApp
 
         public NewCardResults RequestNewCard()
         {
-            throw new NotImplementedException();
+            NewCardResults newCardResults = new NewCardResults();
+            try
+            {
+                newCardResults = cardServiceFactory.RequestNewCard();
+            }
+            catch (FaultException ex)
+            {
+
+                Console.WriteLine("Error: {0}",ex.Message);
+            }
+
+            return newCardResults;
         }
 
         public bool RevokeExistingCard(string pin)
