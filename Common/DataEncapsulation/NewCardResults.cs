@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Common.DataEncapsulation
 {
-    public struct NewCardResults
+    public class NewCardResults
     {
         public string PinCode { get; set; }
     }

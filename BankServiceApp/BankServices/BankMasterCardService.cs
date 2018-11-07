@@ -32,25 +32,26 @@ namespace BankServiceApp.BankServices
         }
         public NewCardResults RequestNewCard()
         {
-            if(AccountStorage.AccountStorage.Instance.ClientDictionary.ContainsKey(Thread.CurrentPrincipal.Identity.Name))
-            {
-                throw new FaultException<CustomServiceException>(new CustomServiceException("You already have a card in this bank!"),
-                    "You already have a card in this bank!");
-            }
-            else
-            {
-                NewCardResults returnInfo = new NewCardResults()
-                {
-                    PinCode = GenerateRandomPin()
-                };
+            //if(AccountStorage.AccountStorage.Instance.ClientDictionary.ContainsKey(Thread.CurrentPrincipal.Identity.Name))
+            //{
+            //    throw new FaultException<CustomServiceException>(new CustomServiceException("You already have a card in this bank!"),
+            //        "You already have a card in this bank!");
+            //}
+            //else
+            //{
+            //    NewCardResults returnInfo = new NewCardResults()
+            //    {
+            //        PinCode = GenerateRandomPin()
+            //    };
 
-                CertificateManager.Instance.CreateAndStoreNewClientCertificate(Thread.CurrentPrincipal.Identity.Name,
-                    returnInfo.PinCode, _issuer);
+            //    CertificateManager.Instance.CreateAndStoreNewClientCertificate(Thread.CurrentPrincipal.Identity.Name,
+            //        returnInfo.PinCode, _issuer);
 
-                // TODO (JOKI) STORE NEW USER TO ACCOUNT STORAGE
+            //    // TODO (JOKI) STORE NEW USER TO ACCOUNT STORAGE
 
-                return returnInfo;
-            }
+            //    return returnInfo;
+            //}
+            return null;
         }
 
         public bool RevokeExistingCard(string pin)

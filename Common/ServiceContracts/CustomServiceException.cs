@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Common.ServiceContracts
 {
 
-    public class CustomServiceException : System.Exception
+    public class CustomServiceException : Exception
     {
         private string strMessage;
 
