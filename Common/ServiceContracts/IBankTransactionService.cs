@@ -16,9 +16,9 @@ namespace Common.ServiceContracts
         /// </summary>
         /// <param name="transaction">Client created transaction.</param>
         /// <returns>
-        /// True if transaction is executed successfully.
+        /// Remaining amount of money on the given account
         /// </returns>
         [OperationContract]
-        bool ExecuteTransaction(ITransaction transaction);
+        decimal ExecuteTransaction(byte[] transaction);
     }
 }
