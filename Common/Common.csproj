@@ -89,6 +89,7 @@
     <Compile Include="CertificateManager\CertificateManager.cs" />
     <Compile Include="CertificateManager\ICertificateManager.cs" />
     <Compile Include="DataEncapsulation\NewCardResults.cs" />
+    <Compile Include="EventLogData\EventLogData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceContracts\CustomServiceException.cs" />
     <Compile Include="ServiceContracts\IBankAuditService.cs" />
