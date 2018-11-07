@@ -57,13 +57,13 @@ namespace ClientApp
         }
 
 
-        public bool ExecuteTransaction(ITransaction transaction)
+        public decimal ExecuteTransaction(byte[] transaction,string pin)
         {
-            bool Result = false;
+            decimal Result = 0;
 
             try
             {
-                Result = transactionServiceFactory.ExecuteTransaction(transaction);
+                Result = transactionServiceFactory.ExecuteTransaction(transaction,pin);
             }
             catch (FaultException ex)
             {
@@ -103,6 +103,22 @@ namespace ClientApp
             }
 
             return Result;
+        }
+
+        public NewCardResults RequestResetPin(string pin)
+        {
+            NewCardResults newCardResults = new NewCardResults();
+            try
+            {
+                newCardResults = cardServiceFactory.RequestResetPin(pin);
+            }
+            catch (FaultException ex)
+            {
+
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+
+            return newCardResults;
         }
     }
 }

@@ -19,6 +19,6 @@ namespace Common.ServiceContracts
         /// Remaining amount of money on the given account
         /// </returns>
         [OperationContract]
-        decimal ExecuteTransaction(byte[] transaction);
+        decimal ExecuteTransaction(byte[] transaction,string pin);
     }
 }

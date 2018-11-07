@@ -10,7 +10,7 @@ namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        public decimal ExecuteTransaction(byte[] transaction)
+        public decimal ExecuteTransaction(byte[] transaction,string pin)
         {
             // TODO (JOKI) WAITING ON ACCOUNT STORAGE
 

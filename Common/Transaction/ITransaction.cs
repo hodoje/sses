@@ -9,7 +9,8 @@ namespace Common.Transaction
     public enum TransactionType
     {
         Deposit,
-        Withdrawal
+        Withdrawal,
+        CheckBalance
     }
     
     public interface ITransaction
