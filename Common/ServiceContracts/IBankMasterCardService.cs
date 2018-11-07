@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common.DataEncapsulation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Permissions;
@@ -20,7 +21,7 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        bool RequestNewCard(string pin);
+        NewCardResults RequestNewCard();
 
         /// <summary>
         /// Revoke existing certificate given to client.
