@@ -17,7 +17,7 @@ namespace BankServiceApp
     public class BankServicesHost : IServiceHost, IDisposable
     {
         private ServiceHost cardHost = null;
-        private string cardAddress = "net.tcp://localhost:9999/BankMasterCardService";
+        private string cardAddress = String.Empty;
         private string srvCerCn = String.Empty;
         private NetTcpBinding binding = new NetTcpBinding();
 
@@ -28,7 +28,12 @@ namespace BankServiceApp
             cardHost.AddServiceEndpoint(typeof(IBankMasterCardService), binding, cardAddress);
            // cardHost.Credentials.ServiceCertificate.Certificate = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, srvCerCn);
         }
-
+        private void ReadConfig()
+        {
+            cardAddress = BankAppConfig.Endpoints[0] + BankAppConfig.MasterCardServiceName;
+            srvCerCn = BankAppConfig.ServiceCertCN;
+        }
+            
         private void SetUpBinding()
         {
             binding.Security.Mode = SecurityMode.Transport;

@@ -14,7 +14,7 @@ namespace BankServiceApp
         public const string ReplicatorConfigName = "ReplicationEndpointName";
         public const string MasterCardServiceConfigName = "MasterCardServiceEndpointName";
         public const string TransactionServiceConfigName = "TransactionServiceEndpointName";
-
+        public const string ServiceCertCNConfigName = "SrvCerCn";
         static BankAppConfig()
         {
             ReplicatorName = ConfigurationManager.AppSettings.Get(ReplicatorConfigName);
@@ -28,6 +28,7 @@ namespace BankServiceApp
             {
                 Endpoints.Add(ConfigurationManager.AppSettings.Get($"{ServiceAddressConfigName}{i}"));
             }
+            ServiceCertCN = ConfigurationManager.AppSettings.Get(ServiceCertCNConfigName);
         }
 
         public static string ReplicatorName { get; private set; }
@@ -39,5 +40,6 @@ namespace BankServiceApp
         public static int InstanceNo { get; private set; }
 
         public static List<string> Endpoints { get; private set; }
+        public static string  ServiceCertCN { get; private set; }
     }
 }

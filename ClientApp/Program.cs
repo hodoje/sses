@@ -3,6 +3,7 @@ using Common.DataEncapsulation;
 using Common.Transaction;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -17,62 +18,18 @@ namespace ClientApp
     {
         static void Main(string[] args)
         {
+            //Loading pathCert from App.config
+            string pathCert = ConfigurationManager.AppSettings.Get("pathCert");
 
             string odg;
-            string pathCert = String.Empty;
             decimal amount = 0;
             byte[] signature;
             string pin = String.Empty;
             ClientProxy clientProxy = new ClientProxy();
             NewCardResults newCardResults = new NewCardResults();
-            Console.WriteLine("Welcome to BankService");
             X509Certificate2 cert = new X509Certificate2();
             ITransaction transaction;
-            //We trust our users :D
-            Console.WriteLine("Do you have MasterCard?");
-            Console.WriteLine("1.Yes");
-            Console.WriteLine("2.No");
-            odg = Console.ReadLine();
-
-            if (odg[0] == '2')
-            {
-                newCardResults = clientProxy.RequestNewCard();
-                Console.WriteLine("Pin code of your new MasterCard is: {0}",newCardResults.PinCode);
-            }
-            //We do not trust our users :(
-           /* Console.WriteLine("Enter your password");
-            bool failed = true;
-            password = Console.ReadLine();
-            try
-            {
-                cerPrivate = CertificateManager.Instance.GetPrivateCertificateFromFile(pathCert, password);
-                failed = false;
-            }
-            catch (CryptographicException ex)
-            {
-
-               
-            }
-
-            if (failed)
-            {
-                Console.WriteLine("Do you want to make new MasterCard?");
-                Console.WriteLine("1.Yes");
-                Console.WriteLine("2.No");
-                odg = Console.ReadLine();
-            }
-            
-            if(odg[0] == '1')
-            {
-                newCardResults = clientProxy.RequestNewCard();
-                Console.WriteLine("Pin code of your new MasterCard is: {0}", newCardResults.PinCode);
-            }
-            else
-            {
-                return;
-            }*/
-            //if(CertificateManager.Instance.GetPrivateCertificateFromFile())
-           //Dodati dodaj novi masterCard option,proveriti 1 2 3 5 da li postoji tj nmz nista radiiti bez cert,gornje se moze sve obrisati
+        
             do
             {
                 System.Console.Clear();
@@ -82,79 +39,114 @@ namespace ClientApp
                 Console.WriteLine("2.Deposit.");
                 Console.WriteLine("3.Check balance.");
                 Console.WriteLine("4.Revoke your MasterCard.");
-                Console.WriteLine("5.Reset your pin code.");
-                Console.WriteLine("6.Exit");
+                Console.WriteLine("5.Request new MasterCard.");
+                Console.WriteLine("6.Reset your pin code.");
+                Console.WriteLine("7.Exit");
                 odg = Console.ReadLine();
               
                 switch (odg[0])
                 {
                     case '1'://Withdrawal
-                        cert = GetCert(pathCert);
-                        Console.WriteLine("How much money do you wish to withdrawal?");
-                        decimal.TryParse(Console.ReadLine(),out amount);
-                        Console.WriteLine("Enter your pin:");
-                        pin = Console.ReadLine();
-                        transaction = new Transaction(TransactionType.Withdrawal, amount, pin);
-                        signature = Sign(cert, transaction);
-                        amount = clientProxy.ExecuteTransaction(signature, pin);
-                        Console.WriteLine("Your new balance is {0}",amount);
-                        break;
-
-                    case '2'://Deposit
-                        cert = GetCert(pathCert);
-                        Console.WriteLine("How much money do you wish to deposit?");
-                        decimal.TryParse(Console.ReadLine(), out amount);
-                        Console.WriteLine("Enter your pin:");
-                        pin = Console.ReadLine();
-                        transaction = new Transaction(TransactionType.Deposit, amount, pin);
-                        signature = Sign(cert, transaction);
-                        amount = clientProxy.ExecuteTransaction(signature, pin);
-                        Console.WriteLine("Your new balance is {0}", amount);
-
-                        break;
-
-                    case '3'://CheckBalance
-                        cert = GetCert(pathCert);
-                        Console.WriteLine("Enter your pin:");
-                        pin = Console.ReadLine();
-                        transaction = new Transaction(TransactionType.CheckBalance, 0, pin);
-                        signature = Sign(cert, transaction);
-                        amount = clientProxy.ExecuteTransaction(signature, pin);
-                        Console.WriteLine("Your current balance is {0}", amount);
-                        break;
-
-                    case '4'://Revoke MasterCard
-                        Console.WriteLine("Enter your pin:");
-                        pin = Console.ReadLine();
-                        clientProxy.RevokeExistingCard(pin);
-                        Console.WriteLine("Do you wish to request new MasterCard?");
-                        Console.WriteLine("1.Yes");
-                        Console.WriteLine("2.No");
-                        string response = Console.ReadLine();
-                        if(response[0] == '1')
+                        if ((cert = TryGetCertifacate(pathCert)) != null)
                         {
-                            newCardResults = clientProxy.RequestNewCard();
-                            Console.WriteLine("Pin code of your new MasterCard is: {0}", newCardResults.PinCode);
+                            Console.WriteLine("How much money do you wish to withdrawal?");
+                            decimal.TryParse(Console.ReadLine(), out amount);
+                            Console.WriteLine("Enter your pin:");
+                            pin = Console.ReadLine();
+                            transaction = new Transaction(TransactionType.Withdrawal, amount, pin);
+                            signature = Sign(cert, transaction);
+                            amount = clientProxy.ExecuteTransaction(signature, transaction);
+                            Console.WriteLine("Your new balance is {0}", amount);
                         }
                         else
                         {
-                            return;
+                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to requet new one select option 5.");
                         }
                         break;
 
-                    case '5'://Reset Pin
-                        Console.WriteLine("Enter your pin:");
-                        pin = Console.ReadLine();
-                        newCardResults = clientProxy.RequestResetPin(pin);
-                        Console.WriteLine("Your new pin code is {0}",newCardResults.PinCode);
+                    case '2'://Deposit
+                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        {
+                            Console.WriteLine("How much money do you wish to deposit?");
+                            decimal.TryParse(Console.ReadLine(), out amount);
+                            Console.WriteLine("Enter your pin:");
+                            pin = Console.ReadLine();
+                            transaction = new Transaction(TransactionType.Deposit, amount, pin);
+                            signature = Sign(cert, transaction);
+                            amount = clientProxy.ExecuteTransaction(signature, transaction);
+                            Console.WriteLine("Your new balance is {0}", amount);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+                        }
                         break;
 
+                    case '3'://CheckBalance
+                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        {
+
+                            Console.WriteLine("Enter your pin:");
+                            pin = Console.ReadLine();
+                            transaction = new Transaction(TransactionType.CheckBalance, 0, pin);
+                            signature = Sign(cert, transaction);
+                            amount = clientProxy.ExecuteTransaction(signature, transaction);
+                            Console.WriteLine("Your current balance is {0}", amount);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+                        }
+                        break;
+
+                    case '4'://Revoke MasterCard
+                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        {
+
+                            Console.WriteLine("Enter your pin:");
+                            pin = Console.ReadLine();
+                            clientProxy.RevokeExistingCard(pin);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+                        }
+                        break;
+
+                    case '5'://Request new MasterCard
+                        if ((cert = TryGetCertifacate(pathCert)) == null)
+                        {
+                            newCardResults = clientProxy.RequestNewCard();
+                            Console.WriteLine("Pin code for your new MasterCard is: {0}", newCardResults.PinCode);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You already own a MasterCard!!");
+                        }     
+                            break;
+
+                    case '6'://Reset Pin
+                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        {
+
+                            Console.WriteLine("Enter your pin:");
+                            pin = Console.ReadLine();
+                            newCardResults = clientProxy.RequestResetPin(pin);
+                            Console.WriteLine("Your new pin code is {0}", newCardResults.PinCode);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+                        }
+                        break;
+
+                    
                     default:
                         break;
                 }
 
             
-            } while (odg[0] != '6');
+            } while (odg[0] != '7');
 
 
 
@@ -182,12 +174,24 @@ namespace ClientApp
             }
             return signature;
         }
-        private static X509Certificate2 GetCert(string pathCert)
+    
+
+        private static X509Certificate2 TryGetCertifacate(string pathCert)
         {
             X509Certificate2 cert = null;
             Console.WriteLine("Enter your password");
-            string  password = Console.ReadLine();
-            cert = CertificateManager.Instance.GetPrivateCertificateFromFile(pathCert, password);
+            string password = Console.ReadLine();
+
+           
+            try
+            {
+                cert = CertificateManager.Instance.GetPrivateCertificateFromFile(pathCert, password);
+             
+            }
+            catch (CryptographicException ex)
+            {
+
+            }
             return cert;
         }
     }
