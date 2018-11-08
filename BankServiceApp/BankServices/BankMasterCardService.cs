@@ -38,80 +38,111 @@ namespace BankServiceApp.BankServices
         }
         public NewCardResults RequestNewCard()
         {
-            //if(AccountStorage.AccountStorage.Instance.ClientDictionary.ContainsKey(Thread.CurrentPrincipal.Identity.Name))
-            //{
-            //    throw new FaultException<CustomServiceException>(new CustomServiceException("You already have a card in this bank!"),
-            //        "You already have a card in this bank!");
-            //}
-            //else
-            //{
-            //    NewCardResults returnInfo = new NewCardResults()
-            //    {
-            //        PinCode = GenerateRandomPin()
-            //    };
+            string clientName = Thread.CurrentPrincipal.Identity.Name;
+            try
+            {
+                if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
+                {
+                    throw new FaultException<CustomServiceException>(new CustomServiceException("You already have a card in this bank!"),
+                        "You already have a card in this bank!");
+                }
+                else
+                {
+                    // Information that is going to be sent to client 
+                    NewCardResults returnInfo = new NewCardResults()
+                    {
+                        PinCode = GenerateRandomPin()
+                    };
 
-            //    CertificateManager.Instance.CreateAndStoreNewClientCertificate(Thread.CurrentPrincipal.Identity.Name,
-            //        returnInfo.PinCode, _issuer);
+                    // Create new certificate ( MasterCard ) for client and store it
+                    CertificateManager.Instance.CreateAndStoreNewClientCertificate(clientName,
+                        returnInfo.PinCode, _issuer);
 
-            //    // TODO (JOKI) STORE NEW USER TO ACCOUNT STORAGE
+                    // Add client to the "database"
+                    AccountStorage.AccountStorage.Instance.AddNewClient(clientName, returnInfo.PinCode);
 
-            //    return returnInfo;
-            //}
+                    return returnInfo;
+                }
+            }
+            catch(ArgumentNullException ane)
+            {
+                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
+                    $"{ane.Message} was null!");
+            }
             return null;
         }
 
         public bool RevokeExistingCard(string pin)
         {
-            // TODO (JOKI) Check clients credentials
-
-            /*
-                if( AccountStorage.UserExists( usersName ) )
+            string clientName = Thread.CurrentPrincipal.Identity.Name;
+            try
+            {
+                // Check if client exists
+                if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
                 {
-                    if ( AccountStorage.Authorize ( usersName, pin ) )
+                    // if he exists in the system, authorize him
+                    if (AccountStorage.AccountStorage.Instance.ValidateClientPin(clientName, pin))
                     {
-                        ADD CARD TO REVOCATION LIST
+                        // TODO CARD REVOCATION
+
+                        return true;
                     }
+                    // if the authorization fails, throw CustomServiceException
                     else
                     {
-                        return false or throw exception on Authorization failed ( wrong pin )
+                        throw new FaultException<CustomServiceException>(new CustomServiceException("Pin is not valid!"),
+                        "Pin is not valid!");
                     }
                 }
+                // if the client does not exist in the system
                 else
                 {
-                    return false or throw exception ( wrong username = MasterCard does not exist )
+                    throw new FaultException<CustomServiceException>(new CustomServiceException("You are not authenticated!"),
+                        "You are not authenticated!");
                 }
-            */
-            throw new NotImplementedException();
+            }
+            catch(ArgumentNullException ane)
+            {
+                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
+                    $"{ane.Message} was null!");
+            }
         }
 
         public NewCardResults RequestResetPin(string pin)
         {
-            // TODO (JOKI) Check clients credentials
-
-            /*
-                if( AccountStorage.UserExists( usersName ) )
+            string clientName = Thread.CurrentPrincipal.Identity.Name;
+            NewCardResults results = null;
+            try
+            {
+                if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
                 {
-                    if ( AccountStorage.Authorize ( usersName, pin ) )
+                    // if he exists in the system, authorize him
+                    if (AccountStorage.AccountStorage.Instance.ValidateClientPin(clientName, pin))
                     {
-                        CHANGE PASSWORD
-                        Generate new Pin
+                        results = new NewCardResults() { PinCode = GenerateRandomPin() };
+                        AccountStorage.AccountStorage.Instance.ChangePinCode(clientName, pin, results.PinCode);
 
-                        CHANGE ENTITY INFO ON ACCOUNT STORAGE
-
-                        return newInfo;
+                        return results;
                     }
+                    // if the authorization fails, throw CustomServiceException
                     else
                     {
-                        return false or throw exception on Authorization failed ( wrong pin )
+                        throw new FaultException<CustomServiceException>(new CustomServiceException("Pin is not valid!"),
+                        "Pin is not valid!");
                     }
                 }
+                // if the client does not exist in the system
                 else
                 {
-                    return false or throw exception ( wrong username = MasterCard does not exist )
+                    throw new FaultException<CustomServiceException>(new CustomServiceException("You are not authenticated!"),
+                        "You are not authenticated!");
                 }
-            */
-
-            throw new NotImplementedException();
+            }
+            catch(ArgumentNullException ane)
+            {
+                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
+                    $"{ane.Message} was null!");
+            }
         }
     }
 }
