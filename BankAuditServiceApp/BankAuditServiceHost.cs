@@ -13,16 +13,18 @@ namespace BankAuditServiceApp
 {
     public class BankAuditServiceHost : IServiceHost, IDisposable
     {
-        private ServiceHost _bankAuditServiceHost;
+        private readonly ServiceHost _bankAuditServiceHost;
         private string _bankAuditServiceAddress;
+        private string _bankAuditServiceEndpointName;
         private NetTcpBinding _binding;
 
         public BankAuditServiceHost()
         {
-            _bankAuditServiceAddress = ConfigurationManager.AppSettings["bankAuditServiceAddress"];
+            _bankAuditServiceAddress = BankAuditServiceConfig.BankAuditServiceAddress;
+            _bankAuditServiceEndpointName = BankAuditServiceConfig.BankAuditServiceEndpointName;
             _binding = SetUpBinding();
             _bankAuditServiceHost = new ServiceHost(typeof(BankAuditService));
-            _bankAuditServiceHost.AddServiceEndpoint(typeof(IBankAuditService), _binding, _bankAuditServiceAddress);
+            _bankAuditServiceHost.AddServiceEndpoint(typeof(IBankAuditService), _binding, $"{_bankAuditServiceAddress}/{_bankAuditServiceEndpointName}");
         }
 
         private NetTcpBinding SetUpBinding()

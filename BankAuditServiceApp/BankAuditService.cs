@@ -12,7 +12,7 @@ namespace BankAuditServiceApp
 {
     public class BankAuditService : IBankAuditService
     {
-        private string _logName = ConfigurationManager.AppSettings["logName"];
+        private readonly string _logName = BankAuditServiceConfig.LogName;
 
         public void Log(EventLogData eventLogData)
         {

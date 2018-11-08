@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BankAuditService.cs" />
+    <Compile Include="BankAuditServiceConfig.cs" />
     <Compile Include="BankAuditServiceHost.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
