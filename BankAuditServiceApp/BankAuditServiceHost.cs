@@ -6,11 +6,12 @@ using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
+using BankServiceApp.ServiceHosts;
 using Common.ServiceContracts;
 
 namespace BankAuditServiceApp
 {
-    public class BankAuditServiceHost : IDisposable
+    public class BankAuditServiceHost : IServiceHost, IDisposable
     {
         private ServiceHost _bankAuditServiceHost;
         private string _bankAuditServiceAddress;

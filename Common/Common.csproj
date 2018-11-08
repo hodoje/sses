@@ -91,6 +91,7 @@
     <Compile Include="CertificateManager\ICertificateManager.cs" />
     <Compile Include="DataEncapsulation\NewCardResults.cs" />
     <Compile Include="EventLogData\EventLogData.cs" />
+    <Compile Include="EventLogData\InvalidEventLogTypeException.cs" />
     <Compile Include="IServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceContracts\CustomServiceException.cs" />
