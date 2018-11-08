@@ -9,9 +9,9 @@ namespace BankAuditServiceApp
 {
     internal static class BankAuditServiceConfig
     {
-        private const string LogNameConfigName = "LogName";
-        private const string BankAuditServiceAddressConfigName = "BankAuditServiceAddress";
-        private const string BankAuditServiceEndpointNameConfigName = "BankAuditServiceEndpointName";
+        public const string LogNameConfigName = "LogName";
+        public const string BankAuditServiceAddressConfigName = "BankAuditServiceAddress";
+        public const string BankAuditServiceEndpointNameConfigName = "BankAuditServiceEndpointName";
 
         public static string LogName { get; private set; }
         public static string BankAuditServiceAddress { get; private set; }
