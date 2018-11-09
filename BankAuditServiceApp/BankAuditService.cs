@@ -16,18 +16,12 @@ namespace BankAuditServiceApp
 
         public void Log(EventLogData eventLogData)
         {
-            string sourceName = GetLogSourceName(eventLogData);
             using (EventLog log = new EventLog(_logName))
             {
                 log.MachineName = Environment.MachineName;
-                log.Source = sourceName;
+                log.Source = eventLogData.BankName;
                 log.WriteEntry($"{eventLogData.AccountName}: {eventLogData.LogMessage}", eventLogData.EventLogType);
             }
-        }
-
-        private string GetLogSourceName(EventLogData eventLogData)
-        {
-            return $"{eventLogData.BankName}";
         }
     }
 }
