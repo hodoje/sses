@@ -21,13 +21,13 @@ namespace BankAuditServiceApp
             {
                 log.MachineName = Environment.MachineName;
                 log.Source = sourceName;
-                log.WriteEntry(eventLogData.LogMessage, eventLogData.EventLogType);
+                log.WriteEntry($"{eventLogData.AccountName}: {eventLogData.LogMessage}", eventLogData.EventLogType);
             }
         }
 
         private string GetLogSourceName(EventLogData eventLogData)
         {
-            return $"{eventLogData.BankName}_{eventLogData.AccountName}_{eventLogData.DetectionTime}";
+            return $"{eventLogData.BankName}";
         }
     }
 }

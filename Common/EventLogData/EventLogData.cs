@@ -20,19 +20,16 @@ namespace Common.EventLogData
         [DataMember]
         public string AccountName { get; set; }
         [DataMember]
-        public DateTime DetectionTime { get; set; }
-        [DataMember]
         public string LogMessage { get; set; }
         [DataMember]
         public EventLogEntryType EventLogType { get; set; }
 
         public EventLogData() { }
 
-        public EventLogData(string bankName, string accountName, DateTime detectionTime, string logMessage, EventLogEntryType eventLogEntryType)
+        public EventLogData(string bankName, string accountName, string logMessage, EventLogEntryType eventLogEntryType)
         {
             BankName = !string.IsNullOrWhiteSpace(bankName) ? bankName : throw new ArgumentNullException(nameof(bankName));
             AccountName = !string.IsNullOrWhiteSpace(accountName) ? accountName : throw new ArgumentNullException(nameof(accountName));
-            DetectionTime = !(DateTime.MinValue == detectionTime) ? detectionTime : throw new ArgumentOutOfRangeException(nameof(detectionTime));
             LogMessage = !string.IsNullOrWhiteSpace(logMessage) ? logMessage : throw new ArgumentNullException(nameof(logMessage));
             EventLogType = Enum.IsDefined(typeof(EventLogEntryType), eventLogEntryType) ? eventLogEntryType : throw new InvalidEventLogTypeException();
         }
