@@ -107,6 +107,7 @@
     <Compile Include="Replicator\IReplicator.cs" />
     <Compile Include="Replicator\ReplicationService.cs" />
     <Compile Include="BankServicesHost.cs" />
+    <Compile Include="Replicator\ReplicatorService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

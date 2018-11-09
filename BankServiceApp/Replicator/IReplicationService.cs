@@ -7,7 +7,7 @@ using BankServiceApp.ServiceHosts;
 
 namespace BankServiceApp.Replicator
 {
-    public interface IReplicationService : IReplicator, IDisposable
+    public interface IReplicationService : IDisposable
     {
         void RegisterService(IServiceHost service);
 

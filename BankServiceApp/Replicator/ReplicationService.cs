@@ -5,7 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Security;
 using System.Security.Permissions;
+using System.Security.Principal;
 using System.ServiceModel;
+using System.ServiceModel.Description;
+using System.ServiceModel.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,21 +18,25 @@ using Common.UserData;
 
 namespace BankServiceApp.Replicator
 {
-    [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Single)]
     public class ReplicationService : IReplicationService
     {
-        private readonly ReaderWriterLockSlim _stateLock = new ReaderWriterLockSlim();
+        private static readonly ReaderWriterLockSlim _stateLock = new ReaderWriterLockSlim();
         private readonly List<IServiceHost> _registeredServices = new List<IServiceHost>(10);
 
         private static IReplicator _replicatorProxy;
         private static ChannelFactory<IReplicator> _replicatorFactory;
 
-        private ServiceState _state = ServiceState.Standby;
+        private static ServiceState _state = ServiceState.Standby;
+        private static bool ServiceStarted = false;
         private readonly string _myEndpoint = null;
         private readonly ServiceHost _replicatorHost = null;
 
         public ReplicationService()
         {
+            // If static service provider is populated don't run startup procedure
+            if (ServiceStarted)
+                return;
+
             var endpoints = BankAppConfig.Endpoints;
             var replicator = BankAppConfig.ReplicatorName;
 
@@ -43,9 +50,11 @@ namespace BankServiceApp.Replicator
             {
                 try
                 {
-                    var factory = ChannelFactory<IReplicator>.CreateChannel(binding,
-                        new EndpointAddress($"{endpoint}/{replicator}"));
-                    if (factory.CheckState() == ServiceState.Hot)
+                    var factory = new ChannelFactory<IReplicator>(binding, $"{endpoint}/{replicator}");
+                    factory.Credentials.Windows.AllowedImpersonationLevel = TokenImpersonationLevel.Impersonation;
+
+                    var channel = factory.CreateChannel();
+                    if (channel.CheckState() == ServiceState.Hot)
                     {
                         successList.Add(endpoint);
                     }
@@ -57,8 +66,9 @@ namespace BankServiceApp.Replicator
                 }
             }
 
-            _replicatorHost = new ServiceHost(typeof(ReplicationService));
+            _replicatorHost = new ServiceHost(typeof(ReplicatorService));
             _replicatorHost.AddServiceEndpoint(typeof(IReplicator), binding, $"{_myEndpoint}/{replicator}");
+            _replicatorHost.Authorization.PrincipalPermissionMode = PrincipalPermissionMode.UseWindowsGroups;
             _replicatorHost.Authorization.ImpersonateCallerForAllOperations = true;
 
             _replicatorHost.Open();
@@ -69,6 +79,8 @@ namespace BankServiceApp.Replicator
                 State = ServiceState.Hot;
                 Console.WriteLine($"No {nameof(BankServiceApp)} is HOT => {nameof(BankServiceApp)}_{Process.GetCurrentProcess().Id} will assert.");
             }
+
+            ServiceStarted = true;
         }
 
         #region IReplicationService
@@ -136,9 +148,16 @@ namespace BankServiceApp.Replicator
 
         public void OpenServices()
         {
-            foreach (var registeredService in _registeredServices)
+            if (State == ServiceState.Hot)
             {
-                registeredService.OpenService();
+                foreach (var registeredService in _registeredServices)
+                {
+                    registeredService.OpenService();
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Services startup aborted since server is in STANDBY mode.");
             }
         }
 
@@ -148,31 +167,6 @@ namespace BankServiceApp.Replicator
             {
                 registeredService.CloseService();
             }
-        }
-
-        #endregion
-
-        #region IReplicator
-
-        [OperationBehavior(Impersonation = ImpersonationOption.Required)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Replicator")]
-        public void ReplicateTransaction(ITransaction transaction, string clientName)
-        {
-            throw new NotImplementedException();
-        }
-
-        [OperationBehavior(Impersonation = ImpersonationOption.Required)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Replicator")]
-        public void ReplicateClientData(IClient clientData)
-        {
-            throw new NotImplementedException();
-        }
-
-        [OperationBehavior(Impersonation = ImpersonationOption.Allowed)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Replicator")]
-        public ServiceState CheckState()
-        {
-            return State;
         }
 
         #endregion

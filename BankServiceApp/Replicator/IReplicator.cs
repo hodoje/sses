@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace BankServiceApp.Replicator
         Standby
     }
 
-    [ServiceContract]
+    [ServiceContract(ProtectionLevel = ProtectionLevel.EncryptAndSign)]
     public interface IReplicator
     {
         [OperationContract]

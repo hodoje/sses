@@ -19,7 +19,6 @@ namespace BankServiceApp
     {
         private readonly ServiceHost _cardHost;
         private readonly ServiceHost _transactionServiceHost;
-        private readonly X509Certificate2 _transactionServiceCertificate;
 
         public BankServicesHost()
         {
@@ -35,7 +34,7 @@ namespace BankServiceApp
 
             #region TransactionServiceSetup
 
-            _transactionServiceCertificate = LoadServiceCertificate(BankAppConfig.BankTransactionServiceCertificatePath,
+            var transactionServiceCertificate = LoadServiceCertificate(BankAppConfig.BankTransactionServiceCertificatePath,
                 BankAppConfig.BankTransactionServiceSubjectName,
                 BankAppConfig.BankTransactionServiceCertificatePassword);
 
@@ -44,7 +43,8 @@ namespace BankServiceApp
             _transactionServiceHost = new ServiceHost(typeof(BankTransactionService));
             _transactionServiceHost.AddServiceEndpoint(typeof(IBankTransactionService), transactionHostBinding,
                 transactionServiceEndpoint);
-            _transactionServiceHost.Credentials.ServiceCertificate.Certificate = _transactionServiceCertificate;
+
+            _transactionServiceHost.Credentials.ServiceCertificate.Certificate = transactionServiceCertificate;
 
             #endregion
         }
