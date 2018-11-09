@@ -20,8 +20,7 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [FaultContract(typeof(CustomServiceException))]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        NewCardResults RequestNewCard();
+        NewCardResults RequestNewCard(string password);
 
         /// <summary>
         /// Revoke existing certificate given to client.
@@ -32,7 +31,6 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [FaultContract(typeof(CustomServiceException))]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
         bool RevokeExistingCard(string pin);
 
         /// <summary>
@@ -43,8 +41,7 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [FaultContract(typeof(CustomServiceException))]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Client")]
-        NewCardResults RequestResetPin(string pin);
+        NewCardResults RequestResetPin(string oldPin);
 
     }
 }

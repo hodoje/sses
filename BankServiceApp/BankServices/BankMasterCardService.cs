@@ -14,7 +14,7 @@ namespace BankServiceApp.BankServices
 {
     public class BankMasterCardService : IBankMasterCardService
     {
-        X509Certificate2 _issuer;
+        private readonly X509Certificate2 _issuer;
 
         public BankMasterCardService()
         {
@@ -25,6 +25,7 @@ namespace BankServiceApp.BankServices
         {
             _issuer = issuer;
         }
+
         private string GenerateRandomPin()
         {
             string newPin = "";
@@ -36,7 +37,8 @@ namespace BankServiceApp.BankServices
 
             return newPin;
         }
-        public NewCardResults RequestNewCard()
+
+        public NewCardResults RequestNewCard(string password)
         {
             string clientName = Thread.CurrentPrincipal.Identity.Name;
             try
@@ -69,7 +71,6 @@ namespace BankServiceApp.BankServices
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
                     $"{ane.Message} was null!");
             }
-            return null;
         }
 
         public bool RevokeExistingCard(string pin)

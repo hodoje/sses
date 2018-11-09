@@ -50,9 +50,22 @@ namespace Common.CertificateManager
         /// <param name="subjectName">Client name.</param>
         /// <param name="pvkPass">Password for client private key.</param>
         /// <param name="signingCertificate">Certificate to be used to sign new certificate.</param>
+        /// <param name="path">Path to dir to store new certificates.</param>
         /// <returns>
         /// String containing path to generated .pfx file.
         /// </returns>
-        string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 signingCertificate);
+        string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 signingCertificate, string path = @".\certs\");
+
+        /// <summary>
+        /// Creates new certificate and returns path to .pfx file.
+        /// </summary>
+        /// <param name="subjectName">Client name.</param>
+        /// <param name="pvkPass">Password for private key.</param>
+        /// <param name="issuer">Certificate to be used to sign new certificate.</param>
+        /// <param name="path">Path to dir to store new certificate.</param>
+        /// <returns>
+        /// String containing path to generated .pfx file.
+        /// </returns>
+        string CreateNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\");
     }
 }

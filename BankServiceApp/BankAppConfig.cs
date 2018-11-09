@@ -14,7 +14,13 @@ namespace BankServiceApp
         public const string ReplicatorConfigName = "ReplicationEndpointName";
         public const string MasterCardServiceConfigName = "MasterCardServiceEndpointName";
         public const string TransactionServiceConfigName = "TransactionServiceEndpointName";
-        public const string ServiceCertCNConfigName = "SrvCerCn";
+        public const string BankAuditServiceAddressConfigName = "BankAuditServiceAddress";
+        public const string BankTransactionServiceCertificatePathConfigName = "ServiceCertificatePath";
+        public const string BankTransactionServiceCertificateSubjectNameConfigName = "ServiceCertificateSubjectName";
+        public const string BankTransactionServiceCertificatePasswordConfigName = "ServiceCertificatePass";
+        public const string CACertificatePathConfigName = "CACertificatePath";
+        public const string CACertificatePassConfigName = "CACertificatePass";
+
         static BankAppConfig()
         {
             ReplicatorName = ConfigurationManager.AppSettings.Get(ReplicatorConfigName);
@@ -28,7 +34,16 @@ namespace BankServiceApp
             {
                 Endpoints.Add(ConfigurationManager.AppSettings.Get($"{ServiceAddressConfigName}{i}"));
             }
-            ServiceCertCN = ConfigurationManager.AppSettings.Get(ServiceCertCNConfigName);
+
+            BankAuditServiceEndpoint = ConfigurationManager.AppSettings.Get(BankAuditServiceAddressConfigName);
+            BankTransactionServiceCertificatePath =
+                ConfigurationManager.AppSettings.Get(BankTransactionServiceCertificatePathConfigName);
+            BankTransactionServiceSubjectName =
+                ConfigurationManager.AppSettings.Get(BankTransactionServiceCertificateSubjectNameConfigName);
+            BankTransactionServiceCertificatePassword =
+                ConfigurationManager.AppSettings.Get(BankTransactionServiceCertificatePasswordConfigName);
+            CACertificatePath = ConfigurationManager.AppSettings.Get(CACertificatePathConfigName);
+            CACertificatePass = ConfigurationManager.AppSettings.Get(CACertificatePassConfigName);
         }
 
         public static string ReplicatorName { get; private set; }
@@ -40,6 +55,19 @@ namespace BankServiceApp
         public static int InstanceNo { get; private set; }
 
         public static List<string> Endpoints { get; private set; }
-        public static string  ServiceCertCN { get; private set; }
+
+        public static string BankAuditServiceEndpoint { get; private set; }
+
+        public static string BankTransactionServiceCertificatePath { get; private set; }
+
+        public static string BankTransactionServiceSubjectName { get; private set; }
+
+        public static string BankTransactionServiceCertificatePassword { get; private set; }
+
+        public static string CACertificatePath { get; private set; }
+
+        public static string CACertificatePass { get; private set; }
+
+        public static string  MyAddress { get; set; }
     }
 }

@@ -81,12 +81,12 @@ namespace ClientApp
             return Result;
         }
 
-        public NewCardResults RequestNewCard()
+        public NewCardResults RequestNewCard(string password)
         {
             NewCardResults newCardResults = new NewCardResults();
             try
             {
-                newCardResults = cardServiceFactory.RequestNewCard();
+                newCardResults = cardServiceFactory.RequestNewCard(password);
             }
             catch (FaultException ex)
             {

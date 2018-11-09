@@ -98,6 +98,7 @@
     <Compile Include="AccountStorage\AccountStorage.cs" />
     <Compile Include="AccountStorage\IAccountStorage.cs" />
     <Compile Include="BankAppConfig.cs" />
+    <Compile Include="BankAuditServiceProxy.cs" />
     <Compile Include="BankServices\BankMasterCardService.cs" />
     <Compile Include="BankServices\BankTransactionService.cs" />
     <Compile Include="Program.cs" />

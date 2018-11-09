@@ -116,7 +116,9 @@ namespace ClientApp
                     case '5'://Request new MasterCard
                         if ((cert = TryGetCertifacate(pathCert)) == null)
                         {
-                            newCardResults = clientProxy.RequestNewCard();
+                            Console.WriteLine("Enter key encryption password:");
+                            string password = Console.ReadLine();
+                            newCardResults = clientProxy.RequestNewCard(password);
                             Console.WriteLine("Pin code for your new MasterCard is: {0}", newCardResults.PinCode);
                         }
                         else

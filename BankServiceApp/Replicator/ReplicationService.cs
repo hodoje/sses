@@ -50,10 +50,10 @@ namespace BankServiceApp.Replicator
                         successList.Add(endpoint);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Console.WriteLine($"Failed to establish connection to other service on {endpoint}.");
-                    _myEndpoint = _myEndpoint ?? endpoint;
+                    BankAppConfig.MyAddress = _myEndpoint = _myEndpoint ?? endpoint;
                 }
             }
 

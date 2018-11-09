@@ -102,7 +102,7 @@ namespace Common.CertificateManager
             return new X509Certificate2(filePath, password, X509KeyStorageFlags.Exportable);
         }
 
-        public string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 issuer)
+        public string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
         {
             X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
 
@@ -116,7 +116,7 @@ namespace Common.CertificateManager
             generator.SetSerialNumber(serialNumber);
 
             // Set certificate subject name
-            var subjectDN = new X509Name(subjectName);
+            var subjectDN = new X509Name($"CN={subjectName}");
             generator.SetSubjectDN(subjectDN);
 
             // Set issuer subject name
@@ -172,8 +172,8 @@ namespace Common.CertificateManager
                 new AsymmetricKeyEntry(subjectKeyPair.Private),
                 new X509CertificateEntry[] { certificateEntry });
 
-            var privatePath = @".\certs\" + $"{friendlyName}.pfx";
-            var publicPath = @".\certs\" + $"{friendlyName}.cer";
+            var privatePath = path + $"{friendlyName}.pfx";
+            var publicPath = path + $"{friendlyName}.cer";
 
             using (var stream = new MemoryStream())
             {
@@ -199,6 +199,103 @@ namespace Common.CertificateManager
                     storage.Add(dotNetCertificate);
                     storage.Close();
                 }
+
+                dotNetCertificate.Dispose();
+
+                // Write private parameters to .pfx file to install at client
+                File.WriteAllBytes(privatePath, privateCert);
+                File.WriteAllBytes(publicPath, publicCert);
+            }
+
+            return privatePath;
+        }
+
+        public string CreateNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
+        {
+            X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
+
+            // Generate pseudo random number
+            var randomGen = new CryptoApiRandomGenerator();
+            var random = new SecureRandom(randomGen);
+
+            // Set certificate serial number
+            var serialNumber =
+                BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+            generator.SetSerialNumber(serialNumber);
+
+            // Set certificate subject name
+            var subjectDN = new X509Name($"CN={subjectName}");
+            generator.SetSubjectDN(subjectDN);
+
+            // Set issuer subject name
+            var issuerDN = new X509Name(issuer.Subject);
+            generator.SetIssuerDN(issuerDN);
+
+            // Set certificate validity
+            var notBefore = DateTime.UtcNow.Date;
+            generator.SetNotBefore(notBefore);
+            generator.SetNotAfter(notBefore.AddYears(2));
+
+            // Generate new RSA key pair for certificate
+            var keyGeneratorParameters = new KeyGenerationParameters(random, RSAKeyStrength);
+            var keyPairGenerator = new RsaKeyPairGenerator();
+            keyPairGenerator.Init(keyGeneratorParameters);
+            var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            // Import public key into generator
+            generator.SetPublicKey(subjectKeyPair.Public);
+
+            var issuerKeyPair = DotNetUtilities.GetKeyPair(issuer.PrivateKey);
+
+            // Get key pair from .net issuer certificate
+            //var issuerKeyPair = DotNetUtilities.GetKeyPair(issuer.PrivateKey);
+            var issuerSerialNumber = new BigInteger(issuer.GetSerialNumber());
+
+            // Sign CA key with serial
+            var caKeyIdentifier = new AuthorityKeyIdentifier(
+                SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(issuerKeyPair.Public),
+                new GeneralNames(new GeneralName(issuerDN)),
+                issuerSerialNumber);
+
+            generator.AddExtension(
+                X509Extensions.AuthorityKeyIdentifier.Id,
+                false,
+                caKeyIdentifier);
+
+            // Create signature factory to sign new cert
+            ISignatureFactory signatureFactory = new Asn1SignatureFactory(SignatureAlgorithm, issuerKeyPair.Private);
+
+            // Generate new bouncy castle certificate signed by issuer
+            var newCertificate = generator.Generate(signatureFactory);
+
+            var store = new Pkcs12Store();
+            string friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
+
+            var certificateEntry = new X509CertificateEntry(newCertificate);
+            // Set certificate
+            store.SetCertificateEntry(friendlyName, certificateEntry);
+            // Set private key
+            store.SetKeyEntry(
+                friendlyName,
+                new AsymmetricKeyEntry(subjectKeyPair.Private),
+                new X509CertificateEntry[] { certificateEntry });
+
+            var privatePath = path + $"{friendlyName}.pfx";
+            var publicPath = path + $"{friendlyName}.cer";
+
+            using (var stream = new MemoryStream())
+            {
+                // Convert bouncy castle cert => .net cert
+                store.Save(stream, pvkPass.ToCharArray(), random);
+                var dotNetCertificate = new X509Certificate2(
+                    stream.ToArray(),
+                    pvkPass,
+                    X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+
+                // Extract public part to store in server storage
+                var publicCert = dotNetCertificate.Export(X509ContentType.Cert);
+                // Extract private parameters to export into .pfx for distribution
+                var privateCert = dotNetCertificate.Export(X509ContentType.Pfx, pvkPass);
 
                 dotNetCertificate.Dispose();
 
