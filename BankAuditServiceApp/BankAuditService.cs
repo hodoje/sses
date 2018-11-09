@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using Common.EventLogData;
 using System.Diagnostics;
 using System.Configuration;
+using System.ServiceModel;
 
 namespace BankAuditServiceApp
 {
+	[ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Single)]
     public class BankAuditService : IBankAuditService
     {
         private readonly string _logName = BankAuditServiceConfig.LogName;
