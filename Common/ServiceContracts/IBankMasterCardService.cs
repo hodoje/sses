@@ -49,7 +49,6 @@ namespace Common.ServiceContracts
         /// Checks user credentials arrived trough windows api.
         /// </summary>
         [OperationContract]
-        [FaultContract(typeof(SecurityAccessDeniedException))]
         void Login();
     }
 }

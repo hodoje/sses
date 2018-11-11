@@ -94,6 +94,7 @@
     <Compile Include="EventLogData\InvalidEventLogTypeException.cs" />
     <Compile Include="IServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ProxyPool.cs" />
     <Compile Include="ServiceContracts\CustomServiceException.cs" />
     <Compile Include="ServiceContracts\IBankAuditService.cs" />
     <Compile Include="ServiceContracts\IBankMasterCardService.cs" />

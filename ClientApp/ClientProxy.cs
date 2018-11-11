@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.ServiceModel.Security;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,9 +35,10 @@ namespace ClientApp
             //SetUpEndpointAddress();
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
             var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(binding, cardServiceEndpointAddress);
-            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = @"bankclient1";
-            cardServiceFactory.Credentials.Windows.ClientCredential.Password = "1234";
+            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = @"bankclient";
+            cardServiceFactory.Credentials.Windows.ClientCredential.Password = "123";
             this.cardServiceFactory = cardServiceFactory.CreateChannel();
+            this.cardServiceFactory.Login();
         }
 
      
@@ -52,6 +54,7 @@ namespace ClientApp
                 new Uri(ClientAppConfig.TransactionServiceAddress),
                 new X509CertificateEndpointIdentity(servCert));
         }
+
         private void SetUpBinding()
         {
             binding.Security.Mode = SecurityMode.Transport;

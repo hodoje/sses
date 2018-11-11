@@ -19,6 +19,8 @@ namespace BankServiceApp
             using (IArbitrationServiceProvider arbitrationService = new ArbitrationServiceProvider())
             {
                 ServiceLocator.RegisterService(arbitrationService);
+                ProxyPool.RegisterProxy<IReplicator>(new ReplicatorProxy());
+
                 if (CertificateManager.Instance.GetCACertificate() == null)
                 {
                     var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
