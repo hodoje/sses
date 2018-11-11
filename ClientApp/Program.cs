@@ -34,6 +34,9 @@ namespace ClientApp
                 ClientProxy clientProxy = new ClientProxy(username, password);
                 clientProxy.Login();
                 UserPath = ClientAppConfig.CertificatePath + username;
+                username = String.Empty;
+                password = string.Empty;
+                GC.Collect();
                 do
                 {
                     System.Console.Clear();
