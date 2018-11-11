@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Permissions;
 using System.ServiceModel;
+using System.ServiceModel.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,6 +37,7 @@ namespace Common.ServiceContracts
         /// <summary>
         /// Request password reset.
         /// </summary>
+        /// <exception cref="CustomServiceException"></exception>
         /// <returns>
         /// NewCardResults that contains all information that is relevant to client
         /// </returns>
@@ -43,5 +45,11 @@ namespace Common.ServiceContracts
         [FaultContract(typeof(CustomServiceException))]
         NewCardResults RequestResetPin(string oldPin);
 
+        /// <summary>
+        /// Checks user credentials arrived trough windows api.
+        /// </summary>
+        [OperationContract]
+        [FaultContract(typeof(SecurityAccessDeniedException))]
+        void Login();
     }
 }

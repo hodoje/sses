@@ -19,7 +19,7 @@ namespace ClientApp
         {
             MasterCardServiceAddress = ConfigurationManager.AppSettings.Get(MasterCardServiceAddressName);
             TransactionServiceAddress = ConfigurationManager.AppSettings.Get(TransactionServiceAddressName);
-            ServiceCertificateCN = ConfigurationManager.AppSettings.Get(ServiceCertificateCN);
+            ServiceCertificateCN = ConfigurationManager.AppSettings.Get(ServiceCertificateCNName);
             CertificatePath = ConfigurationManager.AppSettings.Get(CertificatePathName);
         }
 

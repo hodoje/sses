@@ -6,7 +6,9 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BankServiceApp.Replicator;
+using BankServiceApp.Arbitration;
+using BankServiceApp.Replication;
+using Common;
 
 namespace BankServiceApp
 {
@@ -14,10 +16,19 @@ namespace BankServiceApp
     {
         static void Main(string[] args)
         {
-            using (ReplicationService replicationService = new ReplicationService())
+            using (IArbitrationServiceProvider arbitrationService = new ArbitrationServiceProvider())
             {
-                replicationService.RegisterService(new BankServicesHost());
-                replicationService.OpenServices();
+                ServiceLocator.RegisterService(arbitrationService);
+                if (CertificateManager.Instance.GetCACertificate() == null)
+                {
+                    var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
+                        BankAppConfig.CACertificatePath,
+                        BankAppConfig.CACertificatePass);
+                    CertificateManager.Instance.SetCACertificate(caCertificate);
+                }
+
+                arbitrationService.RegisterService(new BankServicesHost());
+                arbitrationService.OpenServices();
                 Console.ReadLine();
             }
         }

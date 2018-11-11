@@ -54,7 +54,7 @@ namespace Common.CertificateManager
         /// <returns>
         /// String containing path to generated .pfx file.
         /// </returns>
-        string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 signingCertificate, string path = @".\certs\");
+        string CreateAndStoreNewCertificate(string subjectName, string pvkPass, X509Certificate2 signingCertificate, string path = @".\certs\");
 
         /// <summary>
         /// Creates new certificate and returns path to .pfx file.
@@ -67,5 +67,13 @@ namespace Common.CertificateManager
         /// String containing path to generated .pfx file.
         /// </returns>
         string CreateNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\");
+
+        /// <summary>
+        /// Set CA private certificate to sign client certificates.
+        /// </summary>
+        /// <param name="certificate">The CA certificate.</param>
+        void SetCACertificate(X509Certificate2 certificate);
+
+        X509Certificate2 GetCACertificate();
     }
 }

@@ -116,35 +116,37 @@ namespace ClientApp
                     case '4'://Revoke MasterCard
                         if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
-
                             Console.WriteLine("Enter your pin:");
                             pin = Console.ReadLine();
                             clientProxy.RevokeExistingCard(pin);
                         }
                         else
                         {
-                            Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+                            Console.WriteLine("You currently don't own a MasterCard!! If you wish to request new one select option 5.");
                         }
                         break;
 
                     case '5'://Request new MasterCard
-                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) == null)
+                        Console.WriteLine("Enter key encryption password:");
+                        string password = Console.ReadLine();
+
+                        // Ovo ne valja onemogucavas vise klijenata da se konektuju kroz istu aplikaciju
+                        // Treba da iz ovog dir iscitas cert koji je vezan za trenutnog korisnika
+                        // Nakon sto implementiras login na pocetku client app
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath, password)) == null)
                         {
-                            Console.WriteLine("Enter key encryption password:");
-                            string password = Console.ReadLine();
                             newCardResults = clientProxy.RequestNewCard(password);
                             Console.WriteLine("Pin code for your new MasterCard is: {0}", newCardResults.PinCode);
                         }
                         else
                         {
                             Console.WriteLine("You already own a MasterCard!!");
-                        }     
-                            break;
+                        }
+                        break;
 
                     case '6'://Reset Pin
                         if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
-
                             Console.WriteLine("Enter your pin:");
                             pin = Console.ReadLine();
                             newCardResults = clientProxy.RequestResetPin(pin);
@@ -155,21 +157,9 @@ namespace ClientApp
                             Console.WriteLine("You currently dont own a MasterCard!! If you wish to request new one select option 5.");
                         }
                         break;
-
-                    
-                    default:
-                        break;
                 }
-
-            
             } while (odg[0] != '7');
 
-
-
-          
-           
-
-       
         }
         private static byte[] Sign(X509Certificate2 cert,ITransaction transaction)
         {
@@ -192,21 +182,22 @@ namespace ClientApp
         }
     
 
-        private static X509Certificate2 TryGetCertifacate(string pathCert)
+        private static X509Certificate2 TryGetCertifacate(string pathCert, string password = null)
         {
             X509Certificate2 cert = null;
-            Console.WriteLine("Enter your password");
-            string password = Console.ReadLine();
+            if (password == null)
+            {
+                Console.WriteLine("Enter your password");
+                password = Console.ReadLine();
+            }
 
-           
             try
             {
                 cert = CertificateManager.Instance.GetPrivateCertificateFromFile(pathCert, password);
-             
             }
-            catch (CryptographicException ex)
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex.Message);
             }
             return cert;
         }

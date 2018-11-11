@@ -3,11 +3,13 @@ using Common.DataEncapsulation;
 using Common.ServiceContracts;
 using Common.Transaction;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
+using System.ServiceModel.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,15 +27,16 @@ namespace ClientApp
 
 
 
-
         public ClientProxy()
         {
             
             SetUpBinding();
             //SetUpEndpointAddress();
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
-            cardServiceFactory = ChannelFactory<IBankMasterCardService>.CreateChannel(binding, new EndpointAddress(ClientAppConfig.MasterCardServiceAddress));
-
+            var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(binding, cardServiceEndpointAddress);
+            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = @"bankclient1";
+            cardServiceFactory.Credentials.Windows.ClientCredential.Password = "1234";
+            this.cardServiceFactory = cardServiceFactory.CreateChannel();
         }
 
      
@@ -41,9 +44,10 @@ namespace ClientApp
         private void SetUpEndpointAddress()
         {
             servCert = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, ClientAppConfig.CertificatePath);
+            // Sta ce ti certifikat ovde koristis windows auth
             cardServiceEndpointAddress = new EndpointAddress(
-                new Uri(ClientAppConfig.MasterCardServiceAddress),
-                new X509CertificateEndpointIdentity(servCert));
+                new Uri(ClientAppConfig.MasterCardServiceAddress));
+
             transationServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.TransactionServiceAddress),
                 new X509CertificateEndpointIdentity(servCert));
@@ -74,6 +78,20 @@ namespace ClientApp
             return Result;
         }
 
+        public decimal CheckBalance(byte[] signiture, ITransaction transaction)
+        {
+            decimal Result = 0;
+            try
+            {
+                Result = transactionServiceFactory.CheckBalance(signiture, transaction);
+            }
+            catch (FaultException ex)
+            {
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+            return Result;
+        }
+
         public NewCardResults RequestNewCard(string password)
         {
             NewCardResults newCardResults = new NewCardResults();
@@ -83,8 +101,12 @@ namespace ClientApp
             }
             catch (FaultException ex)
             {
-
-                Console.WriteLine("Error: {0}",ex.Message);
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Error: {0}", ex.Message);
+                Console.ReadLine();
             }
 
             return newCardResults;
@@ -115,26 +137,28 @@ namespace ClientApp
             }
             catch (FaultException ex)
             {
-
                 Console.WriteLine("Error: {0}", ex.Message);
             }
 
             return newCardResults;
         }
 
-        public decimal CheckBalance(byte[] signiture, ITransaction transaction)
+        public void Login()
         {
-            decimal Result = 0;
             try
             {
-                Result = transactionServiceFactory.CheckBalance(signiture, transaction);
+                cardServiceFactory.Login();
             }
-            catch (FaultException ex)
+            catch (SecurityAccessDeniedException ex)
             {
-
-                Console.WriteLine("Error: {0}",ex.Message);
+                Console.WriteLine($"User failed to login reason: {ex.Message}");
+                throw;
             }
-            return Result;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
         }
     }
 }

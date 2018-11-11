@@ -77,9 +77,14 @@ namespace BankServiceApp
             catch (Exception)
             {
                 Console.WriteLine("Unable to find service certificate creating new...");
-                var issuer = CertificateManager.Instance.GetPrivateCertificateFromFile(BankAppConfig.CACertificatePath,
-                    BankAppConfig.CACertificatePass);
-                Console.WriteLine($"New certificate at: {CertificateManager.Instance.CreateNewCertificate(name, password, issuer)}");
+                var serviceCertificatePath =
+                    CertificateManager.Instance.CreateAndStoreNewCertificate(
+                        name, 
+                        password,
+                        CertificateManager.Instance.GetCACertificate());
+
+                Console.WriteLine($"New service certificate at: {serviceCertificatePath}");
+
                 try
                 {
                     certificate = CertificateManager.Instance.GetPrivateCertificateFromFile($"{path}{name}.pfx", password);
@@ -103,7 +108,7 @@ namespace BankServiceApp
             catch (Exception ex)
             {
 
-                Console.WriteLine("cardHost failed to open with an error: {0}",ex.Message);
+                Console.WriteLine("CardService failed to open with an error: {0}",ex.Message);
             }
         }
 
@@ -116,7 +121,7 @@ namespace BankServiceApp
             catch (Exception ex)
             {
 
-                Console.WriteLine("cardHost failed to close with an error: {0}", ex.Message);
+                Console.WriteLine("CardService failed to close with an error: {0}", ex.Message);
                 throw;
             }
         }
@@ -130,7 +135,7 @@ namespace BankServiceApp
             catch (Exception ex)
             {
 
-                Console.WriteLine("transationHost failed to open with an error: {0}", ex.Message);
+                Console.WriteLine("TransactionService failed to open with an error: {0}", ex.Message);
                 throw;
             }
         }
@@ -139,12 +144,12 @@ namespace BankServiceApp
         {
             try
             {
-                _transactionServiceHost.Open();
+                _transactionServiceHost.Close();
             }
             catch (Exception ex)
             {
 
-                Console.WriteLine("transationHost failed to close with an error: {0}", ex.Message);
+                Console.WriteLine("TransationService failed to close with an error: {0}", ex.Message);
                 throw;
             }
         }

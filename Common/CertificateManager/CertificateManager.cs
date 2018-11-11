@@ -33,6 +33,7 @@ namespace Common.CertificateManager
         private static ICertificateManager _instance = null;
         private const int RSAKeyStrength = 2048;
         private const string SignatureAlgorithm = "SHA512WithRSA";
+        private static X509Certificate2 CAPrivateCertificate;
 
         public static ICertificateManager Instance
         {
@@ -56,6 +57,18 @@ namespace Common.CertificateManager
         private CertificateManager()
         {
          
+        }
+
+        #region ICertificateManager Methods
+
+        public void SetCACertificate(X509Certificate2 certificate)
+        {
+            CAPrivateCertificate = certificate;
+        }
+
+        public X509Certificate2 GetCACertificate()
+        {
+            return CAPrivateCertificate;
         }
 
         public X509Certificate2 GetCertificateFromStore(StoreLocation storeLocation, StoreName storeName, string subjectName)
@@ -102,7 +115,7 @@ namespace Common.CertificateManager
             return new X509Certificate2(filePath, password, X509KeyStorageFlags.Exportable);
         }
 
-        public string CreateAndStoreNewClientCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
+        public string CreateAndStoreNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
         {
             X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
 
@@ -306,5 +319,7 @@ namespace Common.CertificateManager
 
             return privatePath;
         }
+
+        #endregion
     }
 }

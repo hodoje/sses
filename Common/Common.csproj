@@ -98,6 +98,8 @@
     <Compile Include="ServiceContracts\IBankAuditService.cs" />
     <Compile Include="ServiceContracts\IBankMasterCardService.cs" />
     <Compile Include="ServiceContracts\IBankTransactionService.cs" />
+    <Compile Include="ServiceLocator.cs" />
+    <Compile Include="ServiceLocatorException.cs" />
     <Compile Include="Transaction\ITransaction.cs" />
     <Compile Include="Transaction\NotEnoughResourcesException.cs" />
     <Compile Include="Transaction\Transaction.cs" />
