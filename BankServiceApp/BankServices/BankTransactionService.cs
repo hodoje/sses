@@ -10,7 +10,12 @@ namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        public decimal ExecuteTransaction(byte[] signiture,ITransaction transaction)
+        public decimal CheckBalance(byte[] signiture, ITransaction transaction)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ExecuteTransaction(byte[] signiture,ITransaction transaction)
         {
             // TODO (JOKI) WAITING ON ACCOUNT STORAGE
 

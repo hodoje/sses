@@ -18,11 +18,11 @@ namespace ClientApp
     {
         static void Main(string[] args)
         {
-            //Loading pathCert from App.config
-            string pathCert = ConfigurationManager.AppSettings.Get("pathCert");
+ 
 
             string odg;
             decimal amount = 0;
+            bool Result;
             byte[] signature;
             string pin = String.Empty;
             ClientProxy clientProxy = new ClientProxy();
@@ -47,7 +47,7 @@ namespace ClientApp
                 switch (odg[0])
                 {
                     case '1'://Withdrawal
-                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
                             Console.WriteLine("How much money do you wish to withdrawal?");
                             decimal.TryParse(Console.ReadLine(), out amount);
@@ -55,8 +55,15 @@ namespace ClientApp
                             pin = Console.ReadLine();
                             transaction = new Transaction(TransactionType.Withdrawal, amount, pin);
                             signature = Sign(cert, transaction);
-                            amount = clientProxy.ExecuteTransaction(signature, transaction);
-                            Console.WriteLine("Your new balance is {0}", amount);
+                            Result = clientProxy.ExecuteTransaction(signature, transaction);
+                            if (Result)
+                            {
+                                Console.WriteLine("Successful withdrawal.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("You dont have enough amount of money on your MasterCard.");
+                            }
                         }
                         else
                         {
@@ -65,7 +72,7 @@ namespace ClientApp
                         break;
 
                     case '2'://Deposit
-                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
                             Console.WriteLine("How much money do you wish to deposit?");
                             decimal.TryParse(Console.ReadLine(), out amount);
@@ -73,8 +80,15 @@ namespace ClientApp
                             pin = Console.ReadLine();
                             transaction = new Transaction(TransactionType.Deposit, amount, pin);
                             signature = Sign(cert, transaction);
-                            amount = clientProxy.ExecuteTransaction(signature, transaction);
-                            Console.WriteLine("Your new balance is {0}", amount);
+                            Result = clientProxy.ExecuteTransaction(signature, transaction);
+                            if (Result)
+                            {
+                                Console.WriteLine("Successful deposit.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("You dont have enough amount of money on your MasterCard.");
+                            }
                         }
                         else
                         {
@@ -83,14 +97,14 @@ namespace ClientApp
                         break;
 
                     case '3'://CheckBalance
-                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
 
                             Console.WriteLine("Enter your pin:");
                             pin = Console.ReadLine();
                             transaction = new Transaction(TransactionType.CheckBalance, 0, pin);
                             signature = Sign(cert, transaction);
-                            amount = clientProxy.ExecuteTransaction(signature, transaction);
+                            amount = clientProxy.CheckBalance(signature, transaction);
                             Console.WriteLine("Your current balance is {0}", amount);
                         }
                         else
@@ -100,7 +114,7 @@ namespace ClientApp
                         break;
 
                     case '4'://Revoke MasterCard
-                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
 
                             Console.WriteLine("Enter your pin:");
@@ -114,7 +128,7 @@ namespace ClientApp
                         break;
 
                     case '5'://Request new MasterCard
-                        if ((cert = TryGetCertifacate(pathCert)) == null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) == null)
                         {
                             Console.WriteLine("Enter key encryption password:");
                             string password = Console.ReadLine();
@@ -128,7 +142,7 @@ namespace ClientApp
                             break;
 
                     case '6'://Reset Pin
-                        if ((cert = TryGetCertifacate(pathCert)) != null)
+                        if ((cert = TryGetCertifacate(ClientAppConfig.CertificatePath)) != null)
                         {
 
                             Console.WriteLine("Enter your pin:");

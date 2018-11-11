@@ -19,40 +19,33 @@ namespace ClientApp
 
         private IBankTransactionService transactionServiceFactory = null;
         private IBankMasterCardService cardServiceFactory = null;
-        private string addressMasterCardService = String.Empty;
-        private string addressTransactionService = String.Empty;
         private EndpointAddress cardServiceEndpointAddress = null;
         private EndpointAddress transationServiceEndpointAddress = null;
         private X509Certificate2 servCert = null;
-        private string srvCerCn = String.Empty;
+
 
 
 
         public ClientProxy()
         {
-            ReadConfig();
+            
             SetUpBinding();
             //SetUpEndpointAddress();
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
-            cardServiceFactory = ChannelFactory<IBankMasterCardService>.CreateChannel(binding, new EndpointAddress(addressMasterCardService));
+            cardServiceFactory = ChannelFactory<IBankMasterCardService>.CreateChannel(binding, new EndpointAddress(ClientAppConfig.MasterCardServiceAddress));
 
         }
 
-        private void ReadConfig()
-        {
-            addressMasterCardService = ConfigurationManager.AppSettings.Get("addressMasterCardService");
-            addressTransactionService = ConfigurationManager.AppSettings.Get("addressTransactionService");
-            srvCerCn = ConfigurationManager.AppSettings.Get("srvCerCn");
-        }
+     
 
         private void SetUpEndpointAddress()
         {
-            servCert = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, srvCerCn);
+            servCert = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, ClientAppConfig.CertificatePath);
             cardServiceEndpointAddress = new EndpointAddress(
-                new Uri(addressMasterCardService),
+                new Uri(ClientAppConfig.MasterCardServiceAddress),
                 new X509CertificateEndpointIdentity(servCert));
             transationServiceEndpointAddress = new EndpointAddress(
-                new Uri(addressTransactionService),
+                new Uri(ClientAppConfig.TransactionServiceAddress),
                 new X509CertificateEndpointIdentity(servCert));
         }
         private void SetUpBinding()
@@ -65,9 +58,9 @@ namespace ClientApp
         }
 
 
-        public decimal ExecuteTransaction(byte[] signiture,ITransaction transaction)
+        public bool ExecuteTransaction(byte[] signiture,ITransaction transaction)
         {
-            decimal Result = 0;
+            bool Result = false;
 
             try
             {
@@ -127,6 +120,21 @@ namespace ClientApp
             }
 
             return newCardResults;
+        }
+
+        public decimal CheckBalance(byte[] signiture, ITransaction transaction)
+        {
+            decimal Result = 0;
+            try
+            {
+                Result = transactionServiceFactory.CheckBalance(signiture, transaction);
+            }
+            catch (FaultException ex)
+            {
+
+                Console.WriteLine("Error: {0}",ex.Message);
+            }
+            return Result;
         }
     }
 }
