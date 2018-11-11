@@ -8,6 +8,7 @@ using Common.EventLogData;
 using System.Diagnostics;
 using System.Configuration;
 using System.ServiceModel;
+using System.Threading;
 
 namespace BankAuditServiceApp
 {
@@ -18,6 +19,13 @@ namespace BankAuditServiceApp
 
         public void Log(EventLogData eventLogData)
         {
+            if (!EventLog.SourceExists(eventLogData.BankName))
+            {
+                EventLog.CreateEventSource(eventLogData.BankName, _logName);
+
+                // Giving OS the time to register the source
+                Thread.Sleep(50);
+            }
             using (EventLog log = new EventLog(_logName))
             {
                 log.MachineName = Environment.MachineName;
