@@ -7,6 +7,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -28,7 +29,7 @@ namespace ClientApp
 
 
 
-        public ClientProxy(string username,string password)
+        public ClientProxy(string username,SecureString password)
         {
 
             binding = SetUpBinding();
@@ -36,7 +37,7 @@ namespace ClientApp
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
             var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(binding, cardServiceEndpointAddress);
             cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
-            cardServiceFactory.Credentials.Windows.ClientCredential.Password = password;
+            cardServiceFactory.Credentials.Windows.ClientCredential.SecurePassword = password;
             this.cardServiceFactory = cardServiceFactory.CreateChannel();
             this.cardServiceFactory.Login();
         }

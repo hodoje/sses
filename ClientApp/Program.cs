@@ -7,6 +7,7 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -22,22 +23,27 @@ namespace ClientApp
 
             string odg;
             string username = String.Empty;
-            string password = String.Empty;
             string UserPath = String.Empty;
+            SecureString securePw = new SecureString();
+            ConsoleKeyInfo key;
             Console.WriteLine("Enter your username: ");
             username = Console.ReadLine();
             Console.WriteLine("Enter your password: ");
-            password = Console.ReadLine();
+            do
+            {
+                key = Console.ReadKey(true);
+                securePw.AppendChar(key.KeyChar);
+                Console.Write("*");
+
+            } while (key.Key != ConsoleKey.Enter);
+
             try
             {
 
-                ClientProxy clientProxy = new ClientProxy(username, password);
+                ClientProxy clientProxy = new ClientProxy(username, securePw);
                 clientProxy.Login();
                 UserPath = ClientAppConfig.CertificatePath + username;
-                username = String.Empty;
-                password = string.Empty;
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+
                 do
                 {
                     System.Console.Clear();
