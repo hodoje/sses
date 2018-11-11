@@ -18,7 +18,7 @@ namespace ClientApp
 {
     public class ClientProxy : IBankMasterCardService, IBankTransactionService
     {
-        private NetTcpBinding binding = new NetTcpBinding();
+        private NetTcpBinding binding = null;
 
         private IBankTransactionService transactionServiceFactory = null;
         private IBankMasterCardService cardServiceFactory = null;
@@ -28,15 +28,15 @@ namespace ClientApp
 
 
 
-        public ClientProxy()
+        public ClientProxy(string username,string password)
         {
-            
-            SetUpBinding();
+
+            binding = SetUpBinding();
             //SetUpEndpointAddress();
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
             var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(binding, cardServiceEndpointAddress);
-            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = @"bankclient";
-            cardServiceFactory.Credentials.Windows.ClientCredential.Password = "123";
+            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
+            cardServiceFactory.Credentials.Windows.ClientCredential.Password = password;
             this.cardServiceFactory = cardServiceFactory.CreateChannel();
             this.cardServiceFactory.Login();
         }
@@ -46,7 +46,6 @@ namespace ClientApp
         private void SetUpEndpointAddress()
         {
             servCert = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, ClientAppConfig.CertificatePath);
-            // Sta ce ti certifikat ovde koristis windows auth
             cardServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.MasterCardServiceAddress));
 
@@ -55,13 +54,15 @@ namespace ClientApp
                 new X509CertificateEndpointIdentity(servCert));
         }
 
-        private void SetUpBinding()
+        private NetTcpBinding SetUpBinding()
         {
+            NetTcpBinding binding = new NetTcpBinding();
             binding.Security.Mode = SecurityMode.Transport;
             binding.Security.Transport.ProtectionLevel =
             System.Net.Security.ProtectionLevel.EncryptAndSign;
 
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            return binding;
         }
 
 
