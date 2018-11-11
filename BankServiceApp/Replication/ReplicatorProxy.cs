@@ -20,7 +20,8 @@ namespace BankServiceApp.Replication
     {
         private ChannelFactory<IReplicator> _replicatorProxyFactory;
         private IReplicator _replicatorProxy;
-
+        private AutoResetEvent _threadFinishedEvent = new AutoResetEvent(false);
+        
         private HashSet<CommunicationState> invalidFactoryStates = new HashSet<CommunicationState>
         {
             CommunicationState.Closed,
@@ -81,7 +82,6 @@ namespace BankServiceApp.Replication
                                 Thread.Sleep(100);
                             }
                         }
-
                     }
                     catch (SecurityAccessDeniedException secEx)
                     {
@@ -112,6 +112,8 @@ namespace BankServiceApp.Replication
                     Thread.Sleep(500);
                 }
             }
+
+            _threadFinishedEvent.Set();
         }
 
         private IReplicator CreateReplicatorProxy()
@@ -156,13 +158,13 @@ namespace BankServiceApp.Replication
 
                 _replicationTokenSource.Cancel();
                 _replicationThread.Interrupt();
-                Thread.Sleep(100);
+
+                _threadFinishedEvent.WaitOne(10000);
 
                 _replicationTokenSource.Dispose();
                 _replicationTokenSource = null;
                 _replicationThread = null;
 
-                (_replicatorProxyFactory as IDisposable).Dispose();
                 _replicatorProxyFactory = null;
 
                 while (_replicationQueue.TryDequeue(out IReplicationItem item)) ;

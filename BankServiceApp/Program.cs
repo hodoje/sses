@@ -6,9 +6,11 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BankServiceApp.AccountStorage;
 using BankServiceApp.Arbitration;
 using BankServiceApp.Replication;
 using Common;
+using System.DirectoryServices.AccountManagement;
 
 namespace BankServiceApp
 {
@@ -16,24 +18,28 @@ namespace BankServiceApp
     {
         static void Main(string[] args)
         {
-            using (IArbitrationServiceProvider arbitrationService = new ArbitrationServiceProvider())
+            using (ICache bankCache = new BankCache())
             {
-                ServiceLocator.RegisterService(arbitrationService);
-                using (ReplicatorProxy replicatorProxy = new ReplicatorProxy())
+                ServiceLocator.RegisterService(bankCache);
+                using (IArbitrationServiceProvider arbitrationService = new ArbitrationServiceProvider())
                 {
-                    ProxyPool.RegisterProxy<IReplicator>(replicatorProxy);
-
-                    if (CertificateManager.Instance.GetCACertificate() == null)
+                    ServiceLocator.RegisterService(arbitrationService);
+                    using (ReplicatorProxy replicatorProxy = new ReplicatorProxy())
                     {
-                        var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
-                            BankAppConfig.CACertificatePath,
-                            BankAppConfig.CACertificatePass);
-                        CertificateManager.Instance.SetCACertificate(caCertificate);
-                    }
+                        ProxyPool.RegisterProxy<IReplicator>(replicatorProxy);
 
-                    arbitrationService.RegisterService(new BankServicesHost());
-                    arbitrationService.OpenServices();
-                    Console.ReadLine();
+                        if (CertificateManager.Instance.GetCACertificate() == null)
+                        {
+                            var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
+                                BankAppConfig.CACertificatePath,
+                                BankAppConfig.CACertificatePass);
+                            CertificateManager.Instance.SetCACertificate(caCertificate);
+                        }
+
+                        arbitrationService.RegisterService(new BankServicesHost());
+                        arbitrationService.OpenServices();
+                        Console.ReadLine();
+                    }
                 }
             }
         }

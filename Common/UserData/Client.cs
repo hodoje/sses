@@ -2,6 +2,7 @@
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace Common.UserData
 {
@@ -14,27 +15,48 @@ namespace Common.UserData
             
         }
 
-        public Client(string name, IAccount account, string pin)
+        public Client(string name, IAccount account, string pin = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Account = account ?? throw new ArgumentNullException(nameof(account));
-            Pin = GetPinHash(pin ?? throw new ArgumentNullException(nameof(account)));
+            Pin = pin != null ? GetPinHash(pin) : null;
         }
 
         [DataMember]
-        public string Name { get; private set; }
+        public string Name { get; set; }
 
         [DataMember]
-        public string Pin { get; private set; }
+        public string Pin { get; set; }
 
         [DataMember]
-        public IAccount Account { get; private set; }
+        [XmlIgnore]
+        public IAccount Account { get; set; }
+
+        /// <summary>
+        /// Used for serialization purposes
+        /// </summary>
+        [IgnoreDataMember]
+        public decimal Balance
+        {
+            get => Account.Balance;
+            set => Account = new Account(value);
+        }
 
         public virtual void ResetPin(string oldPin, string newPin)
         {
-            var oldPinHash = GetPinHash(oldPin);
+            if (oldPin == null)
+            {
+                Pin = GetPinHash(newPin);
+            }
+            else
+            {
+                var oldPinHash = GetPinHash(oldPin);
 
-            if (Pin.Equals(oldPinHash, StringComparison.OrdinalIgnoreCase)) Pin = GetPinHash(newPin);
+                if (Pin.Equals(oldPinHash, StringComparison.OrdinalIgnoreCase))
+                {
+                    Pin = GetPinHash(newPin);
+                }
+            }
         }
 
         public bool CheckPin(string pin)

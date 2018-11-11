@@ -10,15 +10,21 @@ using System.ServiceModel.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BankServiceApp.AccountStorage;
+using Common;
+using Common.UserData;
 
 namespace BankServiceApp.BankServices
 {
     public class BankMasterCardService : IBankMasterCardService
     {
         private X509Certificate2 _CACertificate;
+        private ICache _bankCache;
 
         public BankMasterCardService()
         {
+            _bankCache = ServiceLocator.GetInstance<ICache>();
+
             _CACertificate = CertificateManager.Instance.GetCACertificate();
             if (_CACertificate == null)
             {
@@ -75,13 +81,13 @@ namespace BankServiceApp.BankServices
             try
             {
                 // Check if client exists
-                if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
+                if (_bankCache.TryGetClient(clientName, out IClient client))
                 {
                     // if he exists in the system, authorize him
-                    if (AccountStorage.AccountStorage.Instance.ValidateClientPin(clientName, pin))
+                    if (client.CheckPin(pin))
                     {
                         // TODO CARD REVOCATION
-
+                        Console.WriteLine("Client requested card revocation.");
                         return true;
                     }
                     // if the authorization fails, throw CustomServiceException
@@ -111,13 +117,14 @@ namespace BankServiceApp.BankServices
             NewCardResults results = null;
             try
             {
-                if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
+                if (_bankCache.TryGetClient(clientName, out IClient client))
                 {
                     // if he exists in the system, authorize him
-                    if (AccountStorage.AccountStorage.Instance.ValidateClientPin(clientName, pin))
+                    if (client.CheckPin(pin))
                     {
+                        Console.WriteLine("Client requested pin reset.");
                         results = new NewCardResults() { PinCode = GenerateRandomPin() };
-                        AccountStorage.AccountStorage.Instance.ChangePinCode(clientName, pin, results.PinCode);
+                        client.ResetPin(pin, results.PinCode);
 
                         return results;
                     }
@@ -162,10 +169,10 @@ namespace BankServiceApp.BankServices
         {
             string newPin = "";
 
-            Random randomValues = new Random();
-
+            Random randomValues = new Random((int)DateTime.Now.Ticks);
+            
             for (int i = 0; i < 4; ++i)
-                newPin += randomValues.Next(0, 10).ToString();
+                newPin += randomValues.Next(0, 9).ToString();
 
             return newPin;
         }

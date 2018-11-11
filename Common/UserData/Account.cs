@@ -64,5 +64,10 @@ namespace Common.UserData
                 throw new NotEnoughResourcesException("User tried to withdraw more resources than available.");
             Balance -= amount;
         }
+
+        public void SetBalance(decimal balance)
+        {
+            Balance = balance;
+        }
     }
 }

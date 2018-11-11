@@ -20,7 +20,7 @@ namespace BankServiceApp
         public const string BankTransactionServiceCertificatePasswordConfigName = "ServiceCertificatePass";
         public const string CACertificatePathConfigName = "CACertificatePath";
         public const string CACertificatePassConfigName = "CACertificatePass";
-
+        public const string BankCachePathConfigName = "BankCachePath";
         static BankAppConfig()
         {
             ReplicatorName = ConfigurationManager.AppSettings.Get(ReplicatorConfigName);
@@ -44,6 +44,7 @@ namespace BankServiceApp
                 ConfigurationManager.AppSettings.Get(BankTransactionServiceCertificatePasswordConfigName);
             CACertificatePath = ConfigurationManager.AppSettings.Get(CACertificatePathConfigName);
             CACertificatePass = ConfigurationManager.AppSettings.Get(CACertificatePassConfigName);
+            BankCachePath = ConfigurationManager.AppSettings.Get(BankCachePathConfigName);
         }
 
         public static string ReplicatorName { get; private set; }
@@ -67,6 +68,8 @@ namespace BankServiceApp
         public static string CACertificatePath { get; private set; }
 
         public static string CACertificatePass { get; private set; }
+
+        public static string BankCachePath { get; private set; }
 
         public static string MyAddress { get; set; } = null;
     }
