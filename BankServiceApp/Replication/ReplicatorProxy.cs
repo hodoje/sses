@@ -3,12 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
+using System.Security.Principal;
 using System.ServiceModel;
 using System.ServiceModel.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BankServiceApp.Arbitration;
+using Common;
 using Common.Transaction;
 using Common.UserData;
 
@@ -19,18 +21,33 @@ namespace BankServiceApp.Replication
         private ChannelFactory<IReplicator> _replicatorProxyFactory;
         private IReplicator _replicatorProxy;
 
+        private HashSet<CommunicationState> invalidFactoryStates = new HashSet<CommunicationState>
+        {
+            CommunicationState.Closed,
+            CommunicationState.Closing,
+            CommunicationState.Faulted
+        };
+
         private ConcurrentQueue<IReplicationItem> _replicationQueue = new ConcurrentQueue<IReplicationItem>();
 
         private Thread _replicationThread;
         private CancellationTokenSource _replicationTokenSource;
         private bool _disposed = false;
 
+        private IArbitrationServiceProvider _arbitrationServiceProvider;
+
         public ReplicatorProxy()
         {
+            _arbitrationServiceProvider = ServiceLocator.GetInstance<IArbitrationServiceProvider>();
             if (BankAppConfig.InstanceNo > 1)
             {
+                _replicationTokenSource = new CancellationTokenSource();
                 _replicationThread = new Thread(ReplicationWorker);
                 _replicationThread.Start(_replicationTokenSource.Token);
+            }
+            else
+            {
+                Console.WriteLine("Only one instance of bank service is specified replicator won't start.");
             }
         }
 
@@ -40,54 +57,88 @@ namespace BankServiceApp.Replication
 
             while (!cancelationToken.IsCancellationRequested)
             {
-                try
+                if (_arbitrationServiceProvider?.State == ServiceState.Hot)
                 {
-                    if (_replicatorProxy == null)
+                    try
                     {
-                        if (_replicatorProxyFactory.State != CommunicationState.Opened)
+                        if (_replicatorProxy != null)
                         {
+                            while (_replicationQueue.TryDequeue(out IReplicationItem replicationItem))
+                            {
+                                _replicatorProxy.ReplicateData(replicationItem);
+                            }
+                        }
+                        else
+                        {
+                            _replicatorProxy = CreateReplicatorProxy();
+                            if (_replicatorProxy?.CheckState() == ServiceState.Standby)
+                            {
+                                Console.WriteLine(
+                                    $"Replicator proxy to {_replicatorProxyFactory.Endpoint.Address} opened.");
+                            }
+                            else
+                            {
+                                Thread.Sleep(100);
+                            }
+                        }
 
+                    }
+                    catch (SecurityAccessDeniedException secEx)
+                    {
+                        Console.WriteLine(
+                            $"({nameof(BankServiceApp)}) [{nameof(ReplicatorProxy)}] Security exception while trying to replicate: {secEx.Message}");
+                        _replicatorProxy = null;
+
+                        // Break on sec exception since replicator probably doesn't have necessary privileges.
+                        break;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        if (_disposed)
+                        {
+                            break;
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(
+                            $"({nameof(BankServiceApp)}) [{nameof(ReplicatorProxy)}] Error: {ex.Message}");
+                        _replicatorProxy = null;
+                        Thread.Sleep(100);
+                    }
                 }
-                catch (SecurityAccessDeniedException secEx)
+                else
                 {
-                    Console.WriteLine(
-                        $"({nameof(BankServiceApp)}) [{nameof(ReplicatorProxy)}] Security exception while trying to replicate: {secEx.Message}");
-                    _replicatorProxy = null;
-
-                    // Break on sec exception since replicator probably doesn't have necessary privileges.
-                    break;
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine($"({nameof(BankServiceApp)}) [{nameof(ReplicatorProxy)}] Error: {ex.Message}");
-                    _replicatorProxy = null;
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
             }
         }
 
-        private void CreateReplicatorFactory()
+        private IReplicator CreateReplicatorProxy()
         {
-            var binding = new NetTcpBinding(SecurityMode.Transport);
-            binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
-            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            if (_replicatorProxyFactory == null || invalidFactoryStates.Contains(_replicatorProxyFactory.State))
+            {
+                var replicatorEndpoint =
+                    $"{BankAppConfig.Endpoints.FirstOrDefault(x => !x.Equals(BankAppConfig.MyAddress))}/{BankAppConfig.ReplicatorName}";
+                _replicatorProxyFactory = ProxyPool.CreateSecureProxyFactory<IReplicator>(replicatorEndpoint);
+            }
 
-            var address = BankAppConfig.Endpoints.FirstOrDefault(x => !x.Equals(BankAppConfig.MyAddress));
-            var factory = new ChannelFactory<IReplicator>(binding, $"{address}/{BankAppConfig.ReplicatorName}");
+            if (invalidFactoryStates.Contains(_replicatorProxyFactory.State))
+            {
+                _replicatorProxyFactory = null;
+            }
+
+            return _replicatorProxyFactory?.CreateChannel();
         }
 
         #region IReplicator Methods
 
-        public void ReplicateTransaction(IReplicationItem replicationItem)
+        public void ReplicateData(IReplicationItem replicationData)
         {
-            _replicationQueue.Enqueue(replicationItem);
-        }
-
-        public void ReplicateClientData(IReplicationItem replicationItem)
-        {
-            _replicationQueue.Enqueue(replicationItem);
+            if (BankAppConfig.InstanceNo > 1)
+            {
+                _replicationQueue.Enqueue(replicationData);
+            }
         }
 
         public ServiceState CheckState()
@@ -101,7 +152,21 @@ namespace BankServiceApp.Replication
         {
             if (!_disposed)
             {
+                _disposed = true;
+
                 _replicationTokenSource.Cancel();
+                _replicationThread.Interrupt();
+                Thread.Sleep(100);
+
+                _replicationTokenSource.Dispose();
+                _replicationTokenSource = null;
+                _replicationThread = null;
+
+                (_replicatorProxyFactory as IDisposable).Dispose();
+                _replicatorProxyFactory = null;
+
+                while (_replicationQueue.TryDequeue(out IReplicationItem item)) ;
+                _replicationQueue = null;
             }
         }
     }

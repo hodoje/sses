@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Permissions;
+using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,21 +27,20 @@ namespace BankServiceApp.Replication
         #region IReplicator
 
         [OperationBehavior(Impersonation = ImpersonationOption.Required)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
-        public void ReplicateTransaction(IReplicationItem replicationItem)
+        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Replicator")]
+        public void ReplicateData(IReplicationItem replicationData)
         {
-            throw new NotImplementedException();
+            switch (replicationData.Type)
+            {
+                case ReplicationType.ClientData:
+                    break;
+                case ReplicationType.Transaction:
+                    break;
+            }
         }
 
         [OperationBehavior(Impersonation = ImpersonationOption.Required)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
-        public void ReplicateClientData(IReplicationItem replicationItem)
-        {
-            throw new NotImplementedException();
-        }
-
-        [OperationBehavior(Impersonation = ImpersonationOption.Required)]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
+        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Replicator")]
         public ServiceState CheckState()
         {
             return _arbitrationServiceProvider.State;

@@ -12,10 +12,7 @@ namespace BankServiceApp.Replication
     public interface IReplicator
     {
         [OperationContract]
-        void ReplicateTransaction(IReplicationItem replicationItem);
-
-        [OperationContract]
-        void ReplicateClientData(IReplicationItem replicationItem);
+        void ReplicateData(IReplicationItem replicationData);
 
         [OperationContract]
         ServiceState CheckState();

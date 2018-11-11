@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BankServiceApp.Replication;
 using BankServiceApp.ServiceHosts;
+using Common;
 using Common.Transaction;
 using Common.UserData;
 
@@ -26,11 +27,7 @@ namespace BankServiceApp.Arbitration
 
         private static ServiceState _state = ServiceState.Standby;
 
-        private readonly string _myEndpoint = null;
         private ServiceHost _replicatorHost = null;
-
-        private IReplicator _replicatorProxy;
-        private ChannelFactory<IReplicator> _replicatorProxyFactory;
 
         private bool _disposed = false;
 
@@ -41,55 +38,63 @@ namespace BankServiceApp.Arbitration
                 throw new ArbitrationException($"Invalid instance number. Range [1,2], is {BankAppConfig.InstanceNo}");
             }
 
-            var endpoints = BankAppConfig.Endpoints;
-            var replicator = BankAppConfig.ReplicatorName;
+            if (BankAppConfig.InstanceNo > 1)
+            {
+                var activeInstanceCount = GetActiveInstanceCount();
 
+                if (activeInstanceCount == 0)
+                {
+                    State = ServiceState.Hot;
+                    Console.WriteLine(
+                        $"No {nameof(BankServiceApp)} is HOT => {nameof(BankServiceApp)}_{Process.GetCurrentProcess().Id} will assert.");
+                }
+
+                OpenReplicationService();
+            }
+            else
+            {
+                BankAppConfig.MyAddress = BankAppConfig.Endpoints[0];
+                State = ServiceState.Hot;
+            }
+        }
+
+        private void OpenReplicationService()
+        {
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
 
-            if (BankAppConfig.InstanceNo > 1)
-            {
-                List<string> successList = new List<string>(BankAppConfig.InstanceNo);
-                foreach (var endpoint in endpoints)
-                {
-                    try
-                    {
-                        var factory = new ChannelFactory<IReplicator>(binding, $"{endpoint}/{replicator}");
-                        factory.Credentials.Windows.AllowedImpersonationLevel = TokenImpersonationLevel.Impersonation;
-
-                        var channel = factory.CreateChannel();
-                        if (channel.CheckState() == ServiceState.Hot)
-                        {
-                            successList.Add(endpoint);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        Console.WriteLine($"Failed to establish connection to other service on {endpoint}.");
-                        BankAppConfig.MyAddress = _myEndpoint = _myEndpoint ?? endpoint;
-                    }
-                }
-
-                if (successList.Count == 0)
-                {
-                    State = ServiceState.Hot;
-                    Console.WriteLine($"No {nameof(BankServiceApp)} is HOT => {nameof(BankServiceApp)}_{Process.GetCurrentProcess().Id} will assert.");
-                }
-            }
-            else
-            {
-                BankAppConfig.MyAddress = _myEndpoint = BankAppConfig.Endpoints[0];
-                State = ServiceState.Hot;
-            }
-
             _replicatorHost = new ServiceHost(typeof(ReplicatorService));
-            _replicatorHost.AddServiceEndpoint(typeof(IReplicator), binding, $"{_myEndpoint}/{replicator}");
+            _replicatorHost.AddServiceEndpoint(typeof(IReplicator), binding, $"{BankAppConfig.MyAddress}/{BankAppConfig.ReplicatorName}");
             _replicatorHost.Authorization.PrincipalPermissionMode = PrincipalPermissionMode.UseWindowsGroups;
             _replicatorHost.Authorization.ImpersonateCallerForAllOperations = true;
 
             _replicatorHost.Open();
-            Console.WriteLine($"Replication service open on {_myEndpoint}/{replicator}");
+            Console.WriteLine($"Replication service open on {BankAppConfig.MyAddress}/{BankAppConfig.ReplicatorName}");
+        }
+
+        private int GetActiveInstanceCount()
+        {
+            var successList = new List<string>(BankAppConfig.InstanceNo);
+            foreach (var endpoint in BankAppConfig.Endpoints)
+            {
+                try
+                {
+                    var replicatorEndpoint = $"{endpoint}/{BankAppConfig.ReplicatorName}";
+
+                    var factory = ProxyPool.CreateSecureProxyFactory<IReplicator>(replicatorEndpoint);
+                    var channel = factory.CreateChannel();
+
+                    if (channel.CheckState() == ServiceState.Hot) successList.Add(endpoint);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine($"Failed to establish connection to other service on {endpoint}.");
+                    BankAppConfig.MyAddress = BankAppConfig.MyAddress ?? endpoint;
+                }
+            }
+
+            return successList.Count;
         }
 
         #region IArbitrationServiceProvider

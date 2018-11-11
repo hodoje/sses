@@ -68,6 +68,6 @@ namespace BankServiceApp
 
         public static string CACertificatePass { get; private set; }
 
-        public static string  MyAddress { get; set; }
+        public static string MyAddress { get; set; } = null;
     }
 }

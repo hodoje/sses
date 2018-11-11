@@ -17,8 +17,10 @@ namespace BankServiceApp.Replication
     {
         [DataMember]
         ReplicationType Type { get; }
+
         [DataMember]
         IClient Client { get; }
+
         [DataMember]
         ITransaction Transaction { get; }
     }
