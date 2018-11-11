@@ -37,6 +37,7 @@ namespace ClientApp
                 username = String.Empty;
                 password = string.Empty;
                 GC.Collect();
+                GC.WaitForPendingFinalizers();
                 do
                 {
                     System.Console.Clear();
