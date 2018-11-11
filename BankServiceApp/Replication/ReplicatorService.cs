@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Permissions;
@@ -26,14 +27,14 @@ namespace BankServiceApp.Replication
 
         [OperationBehavior(Impersonation = ImpersonationOption.Required)]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
-        public void ReplicateTransaction(ITransaction transaction, string clientName)
+        public void ReplicateTransaction(IReplicationItem replicationItem)
         {
             throw new NotImplementedException();
         }
 
         [OperationBehavior(Impersonation = ImpersonationOption.Required)]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
-        public void ReplicateClientData(IClient clientData)
+        public void ReplicateClientData(IReplicationItem replicationItem)
         {
             throw new NotImplementedException();
         }

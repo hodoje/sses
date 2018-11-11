@@ -29,6 +29,9 @@ namespace BankServiceApp.Arbitration
         private readonly string _myEndpoint = null;
         private ServiceHost _replicatorHost = null;
 
+        private IReplicator _replicatorProxy;
+        private ChannelFactory<IReplicator> _replicatorProxyFactory;
+
         private bool _disposed = false;
 
         public ArbitrationServiceProvider()
@@ -89,7 +92,7 @@ namespace BankServiceApp.Arbitration
             Console.WriteLine($"Replication service open on {_myEndpoint}/{replicator}");
         }
 
-        #region IReplicationService
+        #region IArbitrationServiceProvider
     
         public void RegisterService(IServiceHost service)
         {

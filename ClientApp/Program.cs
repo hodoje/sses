@@ -180,7 +180,6 @@ namespace ClientApp
             }
             return signature;
         }
-    
 
         private static X509Certificate2 TryGetCertifacate(string pathCert, string password = null)
         {
