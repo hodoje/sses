@@ -43,15 +43,19 @@ namespace BankServiceApp.AccountStorage
             }
 
             // Try to populate client data from persistent storage
-            using (var stream = new FileStream(BankAppConfig.BankCachePath, FileMode.Open))
+            var cacheLocation = $"{BankAppConfig.BankCachePath}{BankAppConfig.BankName}.xml";
+            if (File.Exists(cacheLocation))
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(List<Client>));
-                var _loadedClients = serializer.Deserialize(stream) as List<Client>;
-                foreach (var loadedClient in _loadedClients)
+                using (var stream = new FileStream(cacheLocation, FileMode.Open))
                 {
-                    if (_clients.ContainsKey(loadedClient.Name))
+                    XmlSerializer serializer = new XmlSerializer(typeof(List<Client>));
+                    var _loadedClients = serializer.Deserialize(stream) as List<Client>;
+                    foreach (var loadedClient in _loadedClients)
                     {
-                        _clients[loadedClient.Name] = loadedClient;
+                        if (_clients.ContainsKey(loadedClient.Name))
+                        {
+                            _clients[loadedClient.Name] = loadedClient;
+                        }
                     }
                 }
             }
@@ -73,7 +77,7 @@ namespace BankServiceApp.AccountStorage
         {
             var storagePath = BankAppConfig.BankCachePath;
 
-            using (var stream = new FileStream(BankAppConfig.BankCachePath, FileMode.Create))
+            using (var stream = new FileStream($"{BankAppConfig.BankCachePath}{BankAppConfig.BankName}.xml", FileMode.Create))
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(List<Client>));
                 serializer.Serialize(stream, _clients.Select(x => x.Value).ToList());
@@ -104,6 +108,22 @@ namespace BankServiceApp.AccountStorage
             }
 
             return retVal;
+        }
+
+        public static IClient GetClientFromCache(ICache cache, string clientName)
+        {
+            IClient client;
+            if (!cache.TryGetClient(clientName, out client))
+            {
+                cache.StoreData();
+                cache.LoadData();
+                if (cache.TryGetClient(clientName, out client))
+                {
+                    cache.StoreData();
+                }
+            }
+
+            return client;
         }
 
         public void Dispose()

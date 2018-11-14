@@ -20,22 +20,22 @@ namespace ClientApp
 {
     public class ClientProxy : IBankMasterCardService, IBankTransactionService
     {
-        private IBankMasterCardService _cardServiceFactory = null;
+        private IBankMasterCardService _cardServiceProxy = null;
         private EndpointAddress _cardServiceEndpointAddress = null;
 
         private IBankTransactionService _transactionServiceProxy;
         private ChannelFactory<IBankTransactionService> _transactionServiceProxyFactory;
-        private EndpointAddress _transationServiceEndpointAddress = null;
+        private EndpointAddress _transactionServiceEndpointAddress = null;
 
-        private X509Certificate2 _servCert;
-        private X509Certificate2 _clientCert;
+        private X509Certificate2 _serverCertificate;
+
         public ClientProxy(string username,SecureString password)
         {
             SetUpEndpoints();
             var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(SetUpWindowsAuthBinding(), _cardServiceEndpointAddress);
             cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
             cardServiceFactory.Credentials.Windows.ClientCredential.SecurePassword = password;
-            this._cardServiceFactory = cardServiceFactory.CreateChannel();
+            this._cardServiceProxy = cardServiceFactory.CreateChannel();
         }
 
         private void SetUpEndpoints()
@@ -43,21 +43,20 @@ namespace ClientApp
             _cardServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.MasterCardServiceAddress));
 
-            _servCert = CertificateManager.Instance.GetCertificateFromStore(
+            _serverCertificate = CertificateManager.Instance.GetCertificateFromStore(
                 StoreLocation.LocalMachine, 
                 StoreName.Root,
                 ClientAppConfig.ServiceCertificateCN);
 
-            _transationServiceEndpointAddress = new EndpointAddress(
+            _transactionServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.TransactionServiceAddress),
-                new X509CertificateEndpointIdentity(_servCert));
+                new X509CertificateEndpointIdentity(_serverCertificate));
         }
 
         public void OpenTransactionServiceProxy(X509Certificate2 clientCertificate)
         {
-            _clientCert = clientCertificate;
             _transactionServiceProxyFactory =
-                new ChannelFactory<IBankTransactionService>(SetupCertAuthBinding(), _transationServiceEndpointAddress);
+                new ChannelFactory<IBankTransactionService>(SetupCertAuthBinding(), _transactionServiceEndpointAddress);
             _transactionServiceProxyFactory.Credentials.ClientCertificate.Certificate = clientCertificate;
             _transactionServiceProxy = _transactionServiceProxyFactory.CreateChannel();
         }
@@ -115,7 +114,7 @@ namespace ClientApp
             NewCardResults newCardResults = new NewCardResults();
             try
             {
-                newCardResults = _cardServiceFactory.RequestNewCard(password);
+                newCardResults = _cardServiceProxy.RequestNewCard(password);
             }
             catch (FaultException ex)
             {
@@ -135,7 +134,7 @@ namespace ClientApp
             bool Result = false;
             try
             {
-                Result = _cardServiceFactory.RevokeExistingCard(pin);
+                Result = _cardServiceProxy.RevokeExistingCard(pin);
             }
             catch (FaultException ex)
             {
@@ -151,7 +150,7 @@ namespace ClientApp
             NewCardResults newCardResults = new NewCardResults();
             try
             {
-                newCardResults = _cardServiceFactory.RequestResetPin();
+                newCardResults = _cardServiceProxy.RequestResetPin();
             }
             catch (FaultException ex)
             {
@@ -165,7 +164,7 @@ namespace ClientApp
         {
             try
             {
-                _cardServiceFactory.Login();
+                _cardServiceProxy.Login();
             }
             catch (SecurityAccessDeniedException ex)
             {

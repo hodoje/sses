@@ -15,9 +15,9 @@ namespace Common.ServiceContracts
         /// Remaining amount of money on the given account
         /// </returns>
         [OperationContract]
-        bool ExecuteTransaction(byte[] signiture, ITransaction transaction);
+        bool ExecuteTransaction(byte[] signature, ITransaction transaction);
 
         [OperationContract]
-        decimal CheckBalance(byte [] signiture, ITransaction transaction);
+        decimal CheckBalance(byte [] signature, ITransaction transaction);
     }
 }

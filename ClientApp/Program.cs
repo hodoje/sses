@@ -73,7 +73,7 @@ namespace ClientApp
                             InsertMasterCard();
                             break;
                         case '1': //Withdrawal
-                            Withdrawal();
+                            Withdraw();
                             break;
 
                         case '2': //Deposit
@@ -207,7 +207,7 @@ namespace ClientApp
             }
         }
 
-        private static void Withdrawal()
+        private static void Withdraw()
         {
             if(_clientCertificate != null)
             {
@@ -278,7 +278,7 @@ namespace ClientApp
                     }
                     else
                     {
-                        Console.WriteLine($"Transaction declined. Reason: {message ?? "Not enough resources."}");
+                        Console.WriteLine($"Transaction failed. {(message != null ? $"Reason: {message}." : String.Empty)}");
                     }
                 }
             }

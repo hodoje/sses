@@ -62,7 +62,7 @@ namespace BankServiceApp.BankServices
                     PinCode = GenerateRandomPin()
                 };
 
-                var client = GetClientFromCache(clientName);
+                var client = BankCache.GetClientFromCache(_bankCache, clientName);
                 client.ResetPin(null, resultData.PinCode);
 
                 _bankCache.StoreData();
@@ -88,7 +88,7 @@ namespace BankServiceApp.BankServices
                 // Check if client exists
                 var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
                 var client = default(IClient);
-                client = GetClientFromCache(clientName);
+                client = BankCache.GetClientFromCache(_bankCache,clientName);
 
                 if (client == null)
                     return false;
@@ -150,7 +150,7 @@ namespace BankServiceApp.BankServices
             string clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
             try
             {
-                var client = GetClientFromCache(clientName);
+                var client = BankCache.GetClientFromCache(_bankCache, clientName);
 
                 Console.WriteLine("Client requested pin reset.");
                 var results = new NewCardResults() {PinCode = GenerateRandomPin()};
@@ -199,22 +199,6 @@ namespace BankServiceApp.BankServices
         {
             var index = fullName.LastIndexOf("\\");
             return fullName.Substring(index + 1, fullName.Length - index - 1);
-        }
-
-        private IClient GetClientFromCache(string clientName)
-        {
-            IClient client;
-            if (!_bankCache.TryGetClient(clientName, out client))
-            {
-                _bankCache.StoreData();
-                _bankCache.LoadData();
-                if (_bankCache.TryGetClient(clientName, out client))
-                {
-                    _bankCache.StoreData();
-                }
-            }
-
-            return client;
         }
 
     }

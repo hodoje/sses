@@ -79,11 +79,20 @@ namespace Common.CertificateManager
             }
 
             X509Certificate2 certificate = null;
+            var subjectNameCN = subjectName.StartsWith("CN=") ? subjectName : $"CN={subjectName}";
 
             using (X509Store store = new X509Store(storeName, storeLocation))
             {
                 store.Open(OpenFlags.ReadOnly);
-                certificate = store.Certificates.Find(X509FindType.FindBySubjectName, subjectName, true)[0];
+                var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, subjectName, true);
+                foreach (var cert in certificates)
+                {
+                    if (cert.Subject.Equals(subjectNameCN))
+                    {
+                        certificate = cert;
+                        break;
+                    }
+                }
                 store.Close();
             }
 
