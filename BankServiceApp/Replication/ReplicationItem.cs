@@ -14,20 +14,12 @@ namespace BankServiceApp.Replication
             
         }
 
-        public ReplicationItem(ReplicationType type, IClient client, ITransaction transaction)
+        public ReplicationItem(IClient client)
         {
-            Type = type;
             Client = client;
-            Transaction = transaction;
         }
 
         [DataMember]
-        public ReplicationType Type { get; private set; }
-
-        [DataMember]
         public IClient Client { get; private set; }
-
-        [DataMember]
-        public ITransaction Transaction { get; private set; }
     }
 }

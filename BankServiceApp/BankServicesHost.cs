@@ -26,7 +26,7 @@ namespace BankServiceApp
             #region MasterCardServiceSetup
 
             var masterCardHostBinding = SetupWindowsAuthBinding();
-            var masterCardServiceEndpoint = $"{BankAppConfig.MyAddress}/{BankAppConfig.MasterCardServiceName}";
+            var masterCardServiceEndpoint = $"{BankAppConfig.MyEndpoint}/{BankAppConfig.MasterCardServiceName}";
 
             _cardHost = new ServiceHost(typeof(BankMasterCardService));
             _cardHost.AddServiceEndpoint(typeof(IBankMasterCardService), masterCardHostBinding, masterCardServiceEndpoint);
@@ -40,7 +40,7 @@ namespace BankServiceApp
                 BankAppConfig.BankTransactionServiceCertificatePassword);
 
             var transactionHostBinding = SetupCertificateAuthBinding();
-            var transactionServiceEndpoint = $"{BankAppConfig.MyAddress}/{BankAppConfig.TransactionServiceName}";
+            var transactionServiceEndpoint = $"{BankAppConfig.MyEndpoint}/{BankAppConfig.TransactionServiceName}";
             _transactionServiceHost = new ServiceHost(typeof(BankTransactionService));
             _transactionServiceHost.AddServiceEndpoint(typeof(IBankTransactionService), transactionHostBinding,
                 transactionServiceEndpoint);
@@ -74,32 +74,15 @@ namespace BankServiceApp
 
         private X509Certificate2 LoadServiceCertificate(string path, string name, string password)
         {
-            X509Certificate2 certificate = null;
-            //try
-            //{
+            X509Certificate2 certificate = default(X509Certificate2);
+            try
+            {
                 certificate = CertificateManager.Instance.GetPrivateCertificateFromFile($"{path}{name}.pfx", password);
-            //}
-            //catch (Exception)
-            //{
-            //    Console.WriteLine("Unable to find service certificate creating new...");
-            //    var serviceCertificatePath =
-            //        CertificateManager.Instance.CreateAndStoreNewCertificate(
-            //            name, 
-            //            password,
-            //            CertificateManager.Instance.GetCACertificate());
-
-            //    Console.WriteLine($"New service certificate at: {serviceCertificatePath}");
-
-            //    try
-            //    {
-            //        certificate = CertificateManager.Instance.GetPrivateCertificateFromFile($"{path}{name}.pfx", password);
-            //    }
-            //    catch (Exception exception)
-            //    {
-            //        Console.WriteLine(exception);
-            //        throw;
-            //    }
-            //}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading service certificate from file. Reason: {ex.Message}");
+            }
 
             return certificate;
         }

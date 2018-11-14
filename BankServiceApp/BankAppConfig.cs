@@ -76,6 +76,6 @@ namespace BankServiceApp
 
         public static string BankName { get; private set; }
 
-        public static string MyAddress { get; set; } = null;
+        public static string MyEndpoint { get; set; } = null;
     }
 }

@@ -116,7 +116,7 @@ namespace BankServiceApp.Replication
             if (_replicatorProxyFactory == null || invalidFactoryStates.Contains(_replicatorProxyFactory.State))
             {
                 var replicatorEndpoint =
-                    $"{BankAppConfig.Endpoints.FirstOrDefault(x => !x.Equals(BankAppConfig.MyAddress))}/{BankAppConfig.ReplicatorName}";
+                    $"{BankAppConfig.Endpoints.FirstOrDefault(x => !x.Equals(BankAppConfig.MyEndpoint))}/{BankAppConfig.ReplicatorName}";
                 _replicatorProxyFactory = ProxyPool.CreateSecureProxyFactory<IReplicator>(replicatorEndpoint);
             }
 

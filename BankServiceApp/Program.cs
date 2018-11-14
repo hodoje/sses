@@ -18,6 +18,14 @@ namespace BankServiceApp
     {
         static void Main(string[] args)
         {
+            if (!Thread.CurrentPrincipal.IsInRole("BankServices"))
+            {
+                Console.WriteLine("Only user in BankServices role can run BankServiceApp.");
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadLine();
+                return;
+            }
+
             using (ICache bankCache = new BankCache())
             {
                 ServiceLocator.RegisterService(bankCache);
