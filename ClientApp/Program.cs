@@ -55,8 +55,9 @@ namespace ClientApp
                     Console.WriteLine("3.Check balance.");
                     Console.WriteLine("4.Revoke your MasterCard.");
                     Console.WriteLine("5.Request new MasterCard.");
-                    Console.WriteLine("6.Reset your pin code.");
-                    Console.WriteLine("7.Exit");
+                    Console.WriteLine("6.Extend your MasterCard.");
+                    Console.WriteLine("7.Reset your pin code.");
+                    Console.WriteLine("8.Exit");
                     odg = Console.ReadLine();
 
                     switch (odg?[0])
@@ -83,14 +84,16 @@ namespace ClientApp
                         case '5': //Request new MasterCard
                             RequestNewMasterCard();
                             break;
-
-                        case '6': //Reset Pin
+                        case '6'://Extend MasterCard
+                            ExtendMasterCard();
+                            break;
+                        case '7': //Reset Pin
                             ResetPin();
                             break;
                     }
 
                     Console.ReadLine();
-                } while (odg?[0] != '7');
+                } while (odg?[0] != '8');
             }
             catch (Exception ex)
             {
@@ -201,7 +204,7 @@ namespace ClientApp
 
         private static void Withdraw()
         {
-            if(_clientCertificate != null)
+            if (_clientCertificate != null)
             {
                 Console.WriteLine("Enter your pin:");
                 string pin = Console.ReadLine();
@@ -276,7 +279,7 @@ namespace ClientApp
             }
             else
             {
-                 Console.WriteLine("No card inserted chose option 0. to insert card.");
+                Console.WriteLine("No card inserted chose option 0. to insert card.");
             }
         }
 
@@ -349,6 +352,23 @@ namespace ClientApp
             {
                 Console.WriteLine(
                     "You currently dont own a MasterCard!! If you wish to request new one select option 5.");
+            }
+        }
+
+        private static void ExtendMasterCard()
+        {
+            Console.WriteLine("Enter key encryption password of your MasterCard:");
+            string password = Console.ReadLine();
+            if (_clientCertificate != null && CheckIfMasterCardExists(_publicCertPath, _username)){
+                if(_clientProxy.ExtendCard(password))
+                    Console.WriteLine("Successfully extended your MasterCard");
+                else
+                    Console.WriteLine("Wrong password!");
+            }
+            else
+            {
+                Console.WriteLine("You currently don't own a MasterCard!! If you wish to request new one select option 5.");
+
             }
         }
     }

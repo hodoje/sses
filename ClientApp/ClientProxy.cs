@@ -207,7 +207,18 @@ namespace ClientApp
 
         public bool ExtendCard(string password)
         {
-            throw new NotImplementedException();
+            bool Result = false;
+            try
+            {
+                Result = _cardServiceProxy.ExtendCard(password);
+            }
+            catch (FaultException ex)
+            {
+
+                Console.WriteLine("Error: {0}",ex.Message);
+            }
+
+            return Result;
         }
     }
 }
