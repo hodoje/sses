@@ -1,22 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Security;
-using System.Security.Permissions;
-using System.Security.Principal;
 using System.ServiceModel;
 using System.ServiceModel.Description;
-using System.ServiceModel.Security;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using BankServiceApp.Replication;
 using BankServiceApp.ServiceHosts;
 using Common;
-using Common.Transaction;
-using Common.UserData;
 
 namespace BankServiceApp.Arbitration
 {

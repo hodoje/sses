@@ -2,16 +2,13 @@
 using Common.DataEncapsulation;
 using Common.ServiceContracts;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Permissions;
 using System.ServiceModel;
-using System.ServiceModel.Security;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using BankServiceApp.AccountStorage;
+using BankServiceApp.Arbitration;
 using Common;
 using Common.UserData;
 
@@ -19,15 +16,16 @@ namespace BankServiceApp.BankServices
 {
     public class BankMasterCardService : IBankMasterCardService
     {
-        private X509Certificate2 _CACertificate;
-        private ICache _bankCache;
+        private readonly ICache _bankCache;
+        private readonly IArbitrationServiceProvider _arbitrationServiceProvider;
 
         public BankMasterCardService()
         {
             _bankCache = ServiceLocator.GetInstance<ICache>();
+            _arbitrationServiceProvider = ServiceLocator.GetInstance<IArbitrationServiceProvider>();
 
-            _CACertificate = CertificateManager.Instance.GetCACertificate();
-            if (_CACertificate == null)
+            var caCertificate = CertificateManager.Instance.GetCACertificate();
+            if (caCertificate == null)
             {
                 throw new Exception("Certificate manager returned null for CA certificate.");
             }
@@ -179,6 +177,12 @@ namespace BankServiceApp.BankServices
             {
                 // Audit success login
             }
+        }
+
+        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Clients")]
+        public ServiceState CheckState()
+        {
+            return _arbitrationServiceProvider.State;
         }
 
         #endregion

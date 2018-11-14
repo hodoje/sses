@@ -33,8 +33,8 @@ namespace Common.UserData
         [XmlElement(nameof(Pin))]
         public byte[] SerializePin
         {
-            get => Encoding.ASCII.GetBytes(Pin);
-            set => Pin = Encoding.ASCII.GetString(value);
+            get => Pin != null ? Encoding.ASCII.GetBytes(Pin) : null;
+            set => Pin = value != null ? Encoding.ASCII.GetString(value) : null;
         }
 
         [DataMember]

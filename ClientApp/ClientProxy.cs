@@ -15,6 +15,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Common;
 
 namespace ClientApp
 {
@@ -176,6 +177,20 @@ namespace ClientApp
                 Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
+        }
+
+        public ServiceState CheckState()
+        {
+            try
+            {
+                return _cardServiceProxy.CheckState();
+            }
+            catch (FaultException ex)
+            {
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+
+            return ServiceState.Standby;
         }
     }
 }

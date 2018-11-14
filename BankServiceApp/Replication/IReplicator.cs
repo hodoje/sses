@@ -1,6 +1,5 @@
-﻿using System.Net.Security;
-using System.ServiceModel;
-using BankServiceApp.Arbitration;
+﻿using System.ServiceModel;
+using Common;
 using Common.Transaction;
 using Common.UserData;
 

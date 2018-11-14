@@ -50,5 +50,14 @@ namespace Common.ServiceContracts
         /// </summary>
         [OperationContract]
         void Login();
+
+        /// <summary>
+        /// Returns arbitration state of current instance.
+        /// </summary>
+        /// <returns>
+        /// The arbitration state.
+        /// </returns>
+        [OperationContract]
+        ServiceState CheckState();
     }
 }

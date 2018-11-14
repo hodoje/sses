@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Permissions;
-using System.Security.Principal;
+﻿using System.Security.Permissions;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using BankServiceApp.Arbitration;
 using Common;
-using Common.Transaction;
-using Common.UserData;
 
 namespace BankServiceApp.Replication
 {

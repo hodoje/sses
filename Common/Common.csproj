@@ -78,18 +78,13 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CertificateManager\CertificateManager.cs" />
     <Compile Include="CertificateManager\ICertificateManager.cs" />
     <Compile Include="DataEncapsulation\NewCardResults.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="EventLogData\EventLogData.cs" />
     <Compile Include="EventLogData\InvalidEventLogTypeException.cs" />
     <Compile Include="IServiceHost.cs" />
