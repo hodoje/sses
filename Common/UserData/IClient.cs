@@ -10,6 +10,8 @@ namespace Common.UserData
 
         [DataMember] string Pin { get; set; }
 
+        int Withdraw { get; set; }
+
         void ResetPin(string oldPin, string newPin);
 
         bool CheckPin(string pin);

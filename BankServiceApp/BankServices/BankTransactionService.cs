@@ -16,24 +16,48 @@ using Common.CertificateManager;
 using Common.EventLogData;
 using Common.ServiceContracts;
 using Common.Transaction;
+using Common.UserData;
+using System.Timers;
 
 namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        private readonly string
-            _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
+        private static readonly double timeInterval = 60.0;
+        private static readonly int withdrawLimitForAudit = 5;
+
+        private System.Timers.Timer checkingTimer = new System.Timers.Timer(timeInterval);
+
+        private readonly string _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
 
         private readonly ICache _bankCache;
 
         private readonly IReplicator _replicatorProxy;
-        //private static StopWatch
 
+        private void CheckingTimerLogic(object sender, ElapsedEventArgs e)
+        {
+            foreach (var client in _bankCache.GetAllClients())
+            {
+                if (client.Withdraw >= withdrawLimitForAudit)
+                {
+                    Task.Run(() =>
+                    {
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            System.AppDomain.CurrentDomain.FriendlyName,
+                            client.Name,
+                            $"{client.Withdraw} transactions made in past {timeInterval} seconds.",
+                            System.Diagnostics.EventLogEntryType.Warning));
+                    });
+                }
+                client.Withdraw = 0;
+            }
+        }
 
         public BankTransactionService()
         {
             _bankCache = ServiceLocator.GetInstance<ICache>();
             _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
+            checkingTimer.Elapsed += new System.Timers.ElapsedEventHandler(CheckingTimerLogic);
         }
 
         public decimal CheckBalance(byte[] signature, ITransaction transaction)
@@ -121,11 +145,11 @@ namespace BankServiceApp.BankServices
 
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
-                            _applicationName,
-                            clientName,
-                            $"Deposit made with {transaction.Amount}$ amount.",
-                            EventLogEntryType.Information));
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                        _applicationName,
+                        clientName,
+                        $"Deposit made with {transaction.Amount} amount.",
+                        System.Diagnostics.EventLogEntryType.Information));
                     });
 
                     break;
@@ -133,15 +157,17 @@ namespace BankServiceApp.BankServices
                     if (client.Account.Balance >= transaction.Amount)
                     {
                         client.Account.Withdraw(transaction.Amount);
+                        ++client.Withdraw;
                         success = true;
+                        
 
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
-                                _applicationName,
-                                clientName,
-                                $"Withdrawal made with {transaction.Amount}$ amount.",
-                                EventLogEntryType.Information));
+                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            _applicationName,
+                            clientName,
+                            $"Withdrawal made with {transaction.Amount} amount.",
+                            System.Diagnostics.EventLogEntryType.Information));
                         });
                     }
 

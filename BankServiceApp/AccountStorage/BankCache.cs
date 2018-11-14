@@ -115,5 +115,10 @@ namespace BankServiceApp.AccountStorage
 
             return client;
         }
+
+        public List<Client> GetAllClients()
+        {
+            return _clients.Values.ToList();
+        }
     }
 }

@@ -44,6 +44,8 @@ namespace Common.UserData
 
         [DataMember] [XmlIgnore] public IAccount Account { get; set; }
 
+        [IgnoreDataMember] [XmlIgnore] public int Withdraw { get; set; }
+
         public virtual void ResetPin(string oldPin, string newPin)
         {
             if (oldPin == null)
