@@ -359,16 +359,28 @@ namespace ClientApp
         {
             Console.WriteLine("Enter key encryption password of your MasterCard:");
             string password = Console.ReadLine();
-            if (_clientCertificate != null && CheckIfMasterCardExists(_publicCertPath, _username)){
-                if(_clientProxy.ExtendCard(password))
-                    Console.WriteLine("Successfully extended your MasterCard");
-                else
-                    Console.WriteLine("Wrong password!");
+            X509Certificate2 cert = null;
+            cert = TryGetPrivateCertificate(_privateCertPath, password);
+            if (cert == null)
+            {
+                Console.WriteLine("Wrong password.");
             }
             else
             {
-                Console.WriteLine("You currently don't own a MasterCard!! If you wish to request new one select option 5.");
+                if (_clientCertificate != null && CheckIfMasterCardExists(_publicCertPath, _username))
+                {
+                    if (_clientProxy.ExtendCard(password))
+                    {
+                        Console.WriteLine("Successfully extended your MasterCard");
+                    }
+                    else
+                        Console.WriteLine("Unsuccessfully extesion.");
+                }
+                else
+                {
+                    Console.WriteLine("You currently don't own a MasterCard!! If you wish to request new one select option 5.");
 
+                }
             }
         }
     }
