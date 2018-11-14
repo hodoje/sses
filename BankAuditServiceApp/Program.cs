@@ -3,9 +3,9 @@ using System.Security.Principal;
 
 namespace BankAuditServiceApp
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var principal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
             if (!principal.IsInRole("BankServices"))
@@ -16,7 +16,7 @@ namespace BankAuditServiceApp
                 return;
             }
 
-            BankAuditServiceHost bankAuditServiceHost = new BankAuditServiceHost();
+            var bankAuditServiceHost = new BankAuditServiceHost();
             bankAuditServiceHost.OpenService();
             Console.WriteLine("BankAuditService is open...");
             Console.ReadLine();

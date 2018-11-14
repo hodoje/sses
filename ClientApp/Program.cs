@@ -1,16 +1,16 @@
-﻿using Common.CertificateManager;
-using Common.Transaction;
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel.Security;
+using Common.CertificateManager;
+using Common.Transaction;
 
 namespace ClientApp
 {
-    class Program
+    internal class Program
     {
         private static string _username;
         private static string _privateCertPath;
@@ -19,7 +19,7 @@ namespace ClientApp
         private static X509Certificate2 _clientCertificate;
         private static ClientProxy _clientProxy;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             string odg;
 
@@ -39,14 +39,11 @@ namespace ClientApp
 
                 _clientCertificate = TryGetPrivateCertificate(_privateCertPath);
 
-                if (_clientCertificate != null)
-                {
-                    _clientProxy.OpenTransactionServiceProxy(_clientCertificate);
-                }
+                if (_clientCertificate != null) _clientProxy.OpenTransactionServiceProxy(_clientCertificate);
 
                 do
                 {
-                    System.Console.Clear();
+                    Console.Clear();
                     Console.WriteLine("Welcome to BankService");
                     Console.WriteLine("Chose one of the following options:");
                     Console.WriteLine("0.InsertMasterCard");
@@ -61,8 +58,6 @@ namespace ClientApp
                     odg = Console.ReadLine();
                     try
                     {
-
-
                         switch (odg?[0])
                         {
                             case '0':
@@ -94,7 +89,6 @@ namespace ClientApp
                                 ResetPin();
                                 break;
                         }
-
                     }
                     catch (SecurityAccessDeniedException e)
                     {
@@ -115,13 +109,9 @@ namespace ClientApp
         {
             var cert = _clientCertificate ?? (_clientCertificate = TryGetPrivateCertificate(_privateCertPath));
             if (cert != null)
-            {
                 _clientProxy.OpenTransactionServiceProxy(_clientCertificate);
-            }
             else
-            {
                 Console.WriteLine("Error no master card certificate found. Chose option 5. to request new card.");
-            }
         }
 
         private static SecureString GetClientPassword()
@@ -142,14 +132,13 @@ namespace ClientApp
                     continue;
                 }
 
-                if (key.Key == ConsoleKey.Enter)
-                {
-                    break;
-                }
+                if (key.Key == ConsoleKey.Enter) break;
 
                 pass.AppendChar(key.KeyChar);
                 Console.Write("*");
-            };
+            }
+
+            ;
             Console.WriteLine();
 
             return pass;
@@ -158,19 +147,17 @@ namespace ClientApp
         private static byte[] Sign(X509Certificate2 cert, ITransaction transaction)
         {
             byte[] signature;
-            using (SHA512Cng hasAlg = new SHA512Cng())
+            using (var hasAlg = new SHA512Cng())
             {
                 using (var stream = new MemoryStream())
                 {
-                    BinaryFormatter formatter = new BinaryFormatter();
+                    var formatter = new BinaryFormatter();
                     formatter.Serialize(stream, transaction);
 
                     var hash = hasAlg.ComputeHash(stream);
                     signature = cert.GetRSAPrivateKey()
                         .SignHash(hash, HashAlgorithmName.SHA512, RSASignaturePadding.Pkcs1);
                 }
-
-
             }
 
             return signature;
@@ -218,13 +205,13 @@ namespace ClientApp
             if (_clientCertificate != null)
             {
                 Console.WriteLine("Enter your pin:");
-                string pin = Console.ReadLine();
+                var pin = Console.ReadLine();
 
                 Console.WriteLine("How much money do you wish to withdraw?");
-                decimal.TryParse(Console.ReadLine(), out decimal amount);
+                decimal.TryParse(Console.ReadLine(), out var amount);
 
                 var transaction = new Transaction(TransactionType.Withdrawal, amount, pin);
-                byte[] signature = Sign(_clientCertificate, transaction);
+                var signature = Sign(_clientCertificate, transaction);
 
                 var result = false;
                 string message = null;
@@ -239,13 +226,9 @@ namespace ClientApp
                 finally
                 {
                     if (result)
-                    {
                         Console.WriteLine("Successful deposit.");
-                    }
                     else
-                    {
                         Console.WriteLine($"Transaction declined. Reason: {message ?? "Not enough resources."}");
-                    }
                 }
             }
             else
@@ -262,7 +245,7 @@ namespace ClientApp
                 var pin = Console.ReadLine();
 
                 Console.WriteLine("How much money do you wish to deposit?");
-                decimal.TryParse(Console.ReadLine(), out decimal amount);
+                decimal.TryParse(Console.ReadLine(), out var amount);
 
                 var transaction = new Transaction(TransactionType.Deposit, amount, pin);
                 var signature = Sign(_clientCertificate, transaction);
@@ -279,13 +262,10 @@ namespace ClientApp
                 finally
                 {
                     if (result)
-                    {
                         Console.WriteLine("Successful deposit.");
-                    }
                     else
-                    {
-                        Console.WriteLine($"Transaction failed. {(message != null ? $"Reason: {message}." : String.Empty)}");
-                    }
+                        Console.WriteLine(
+                            $"Transaction failed. {(message != null ? $"Reason: {message}." : string.Empty)}");
                 }
             }
             else
@@ -339,7 +319,7 @@ namespace ClientApp
         private static void RequestNewMasterCard()
         {
             Console.WriteLine("Enter key encryption password:");
-            string password = Console.ReadLine();
+            var password = Console.ReadLine();
 
             if (_clientCertificate == null || !CheckIfMasterCardExists(_publicCertPath, _username))
             {
@@ -369,7 +349,7 @@ namespace ClientApp
         private static void RenewMasterCard()
         {
             Console.WriteLine("Enter key encryption password of your MasterCard:");
-            string password = Console.ReadLine();
+            var password = Console.ReadLine();
             X509Certificate2 cert = null;
             cert = TryGetPrivateCertificate(_privateCertPath, password);
             if (cert == null)
@@ -381,9 +361,7 @@ namespace ClientApp
                 if (_clientCertificate != null && CheckIfMasterCardExists(_publicCertPath, _username))
                 {
                     if (_clientProxy.ExtendCard(password))
-                    {
                         Console.WriteLine("Successfully extended your MasterCard");
-                    }
                     else
                         Console.WriteLine("Unsuccessfully extesion.");
 
@@ -391,8 +369,8 @@ namespace ClientApp
                 }
                 else
                 {
-                    Console.WriteLine("You currently don't own a MasterCard!! If you wish to request new one select option 5.");
-
+                    Console.WriteLine(
+                        "You currently don't own a MasterCard!! If you wish to request new one select option 5.");
                 }
             }
         }

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BankServiceApp
 {
@@ -32,10 +28,8 @@ namespace BankServiceApp
             InstanceNo = int.Parse(ConfigurationManager.AppSettings.Get(InstanceNumberConfigName));
             Endpoints = new List<string>(InstanceNo);
 
-            for (int i = 0; i < InstanceNo; i++)
-            {
+            for (var i = 0; i < InstanceNo; i++)
                 Endpoints.Add(ConfigurationManager.AppSettings.Get($"{ServiceAddressConfigName}{i}"));
-            }
 
             BankAuditServiceEndpoint = ConfigurationManager.AppSettings.Get(BankAuditServiceAddressConfigName);
             BankTransactionServiceCertificatePath =
@@ -50,31 +44,31 @@ namespace BankServiceApp
             BankName = ConfigurationManager.AppSettings.Get(BankServiceNameConfigName);
         }
 
-        public static string ReplicatorName { get; private set; }
+        public static string ReplicatorName { get; }
 
-        public static string MasterCardServiceName { get; private set; }
+        public static string MasterCardServiceName { get; }
 
-        public static string TransactionServiceName { get; private set; }
+        public static string TransactionServiceName { get; }
 
-        public static int InstanceNo { get; private set; }
+        public static int InstanceNo { get; }
 
-        public static List<string> Endpoints { get; private set; }
+        public static List<string> Endpoints { get; }
 
-        public static string BankAuditServiceEndpoint { get; private set; }
+        public static string BankAuditServiceEndpoint { get; }
 
-        public static string BankTransactionServiceCertificatePath { get; private set; }
+        public static string BankTransactionServiceCertificatePath { get; }
 
-        public static string BankTransactionServiceSubjectName { get; private set; }
+        public static string BankTransactionServiceSubjectName { get; }
 
-        public static string BankTransactionServiceCertificatePassword { get; private set; }
+        public static string BankTransactionServiceCertificatePassword { get; }
 
-        public static string CACertificatePath { get; private set; }
+        public static string CACertificatePath { get; }
 
-        public static string CACertificatePass { get; private set; }
+        public static string CACertificatePass { get; }
 
-        public static string BankCachePath { get; private set; }
+        public static string BankCachePath { get; }
 
-        public static string BankName { get; private set; }
+        public static string BankName { get; }
 
         public static string MyEndpoint { get; set; } = null;
     }

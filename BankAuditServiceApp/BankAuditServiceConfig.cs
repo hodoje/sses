@@ -8,15 +8,15 @@ namespace BankAuditServiceApp
         public const string BankAuditServiceAddressConfigName = "BankAuditServiceAddress";
         public const string BankAuditServiceEndpointNameConfigName = "BankAuditServiceEndpointName";
 
-        public static string LogName { get; private set; }
-        public static string BankAuditServiceAddress { get; private set; }
-        public static string BankAuditServiceEndpointName { get; private set; }
-
         static BankAuditServiceConfig()
         {
             LogName = ConfigurationManager.AppSettings[LogNameConfigName];
             BankAuditServiceAddress = ConfigurationManager.AppSettings[BankAuditServiceAddressConfigName];
             BankAuditServiceEndpointName = ConfigurationManager.AppSettings[BankAuditServiceEndpointNameConfigName];
         }
+
+        public static string LogName { get; }
+        public static string BankAuditServiceAddress { get; }
+        public static string BankAuditServiceEndpointName { get; }
     }
 }

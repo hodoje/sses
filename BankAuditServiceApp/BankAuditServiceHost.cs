@@ -9,9 +9,9 @@ namespace BankAuditServiceApp
     public class BankAuditServiceHost : IServiceHost, IDisposable
     {
         private readonly ServiceHost _bankAuditServiceHost;
-        private string _bankAuditServiceAddress;
-        private string _bankAuditServiceEndpointName;
-        private NetTcpBinding _binding;
+        private readonly string _bankAuditServiceAddress;
+        private readonly string _bankAuditServiceEndpointName;
+        private readonly NetTcpBinding _binding;
 
         public BankAuditServiceHost()
         {
@@ -19,16 +19,13 @@ namespace BankAuditServiceApp
             _bankAuditServiceEndpointName = BankAuditServiceConfig.BankAuditServiceEndpointName;
             _binding = SetUpBinding();
             _bankAuditServiceHost = new ServiceHost(typeof(BankAuditService));
-            _bankAuditServiceHost.AddServiceEndpoint(typeof(IBankAuditService), _binding, $"{_bankAuditServiceAddress}/{_bankAuditServiceEndpointName}");
+            _bankAuditServiceHost.AddServiceEndpoint(typeof(IBankAuditService), _binding,
+                $"{_bankAuditServiceAddress}/{_bankAuditServiceEndpointName}");
         }
 
-        private NetTcpBinding SetUpBinding()
+        public void Dispose()
         {
-            NetTcpBinding binding = new NetTcpBinding();
-            binding.Security.Mode = SecurityMode.Transport;
-            binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
-            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
-            return binding;
+            (_bankAuditServiceHost as IDisposable).Dispose();
         }
 
         public void OpenService()
@@ -55,9 +52,13 @@ namespace BankAuditServiceApp
             }
         }
 
-        public void Dispose()
+        private NetTcpBinding SetUpBinding()
         {
-            (_bankAuditServiceHost as IDisposable).Dispose();
+            var binding = new NetTcpBinding();
+            binding.Security.Mode = SecurityMode.Transport;
+            binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
+            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            return binding;
         }
     }
 }

@@ -1,12 +1,9 @@
 ﻿using System.ServiceModel;
 using Common;
-using Common.Transaction;
 using Common.UserData;
 
 namespace BankServiceApp.Replication
 {
-
-
     [ServiceContract]
     [ServiceKnownType(typeof(ReplicationItem))]
     [ServiceKnownType(typeof(Client))]

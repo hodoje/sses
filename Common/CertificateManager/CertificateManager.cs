@@ -1,62 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
-using System.Linq;
-using System.Security;
-using System.Security.AccessControl;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Operators;
-using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Security.Certificates;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.X509;
-using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
-using X509Extension = Org.BouncyCastle.Asn1.X509.X509Extension;
 
 namespace Common.CertificateManager
 {
     public class CertificateManager : ICertificateManager
     {
-        private static object _sync = new object();
-        private static ICertificateManager _instance = null;
         private const int RSAKeyStrength = 2048;
         private const string SignatureAlgorithm = "SHA512WithRSA";
+        private static readonly object _sync = new object();
+        private static ICertificateManager _instance;
         private static X509Certificate2 CAPrivateCertificate;
+
+        private CertificateManager()
+        {
+        }
 
         public static ICertificateManager Instance
         {
             get
             {
                 if (_instance == null)
-                {
                     lock (_sync)
                     {
-                        if (_instance == null)
-                        {
-                            _instance = new CertificateManager();
-                        }
+                        if (_instance == null) _instance = new CertificateManager();
                     }
-                }
 
                 return _instance;
             }
-        }
-
-        private CertificateManager()
-        {
-         
         }
 
         #region ICertificateManager Methods
@@ -71,28 +52,25 @@ namespace Common.CertificateManager
             return CAPrivateCertificate;
         }
 
-        public X509Certificate2 GetCertificateFromStore(StoreLocation storeLocation, StoreName storeName, string subjectName)
+        public X509Certificate2 GetCertificateFromStore(StoreLocation storeLocation, StoreName storeName,
+            string subjectName)
         {
-            if (subjectName == null)
-            {
-                throw new ArgumentNullException(nameof(subjectName));
-            }
+            if (subjectName == null) throw new ArgumentNullException(nameof(subjectName));
 
             X509Certificate2 certificate = null;
             var subjectNameCN = subjectName.StartsWith("CN=") ? subjectName : $"CN={subjectName}";
 
-            using (X509Store store = new X509Store(storeName, storeLocation))
+            using (var store = new X509Store(storeName, storeLocation))
             {
                 store.Open(OpenFlags.ReadOnly);
                 var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, subjectName, true);
                 foreach (var cert in certificates)
-                {
                     if (cert.Subject.Equals(subjectNameCN))
                     {
                         certificate = cert;
                         break;
                     }
-                }
+
                 store.Close();
             }
 
@@ -101,32 +79,24 @@ namespace Common.CertificateManager
 
         public X509Certificate2 GetPublicCertificateFromFile(string filePath)
         {
-            if (filePath == null)
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
             return new X509Certificate2(filePath);
         }
 
         public X509Certificate2 GetPrivateCertificateFromFile(string filePath, string password)
         {
-            if (filePath == null)
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            if (password == null)
-            {
-                throw new ArgumentNullException(nameof(password));
-            }
+            if (password == null) throw new ArgumentNullException(nameof(password));
 
             return new X509Certificate2(filePath, password, X509KeyStorageFlags.Exportable);
         }
 
-        public string CreateAndStoreNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
+        public string CreateAndStoreNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer,
+            string path = @".\certs\")
         {
-            X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
+            var generator = new X509V3CertificateGenerator();
 
             // Generate pseudo random number
             var randomGen = new CryptoApiRandomGenerator();
@@ -134,7 +104,7 @@ namespace Common.CertificateManager
 
             // Set certificate serial number
             var serialNumber =
-                BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+                BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
             generator.SetSerialNumber(serialNumber);
 
             // Set certificate subject name
@@ -183,7 +153,7 @@ namespace Common.CertificateManager
             var newCertificate = generator.Generate(signatureFactory);
 
             var store = new Pkcs12Store();
-            string friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
+            var friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
 
             var certificateEntry = new X509CertificateEntry(newCertificate);
             // Set certificate
@@ -192,7 +162,7 @@ namespace Common.CertificateManager
             store.SetKeyEntry(
                 friendlyName,
                 new AsymmetricKeyEntry(subjectKeyPair.Private),
-                new X509CertificateEntry[] { certificateEntry });
+                new[] {certificateEntry});
 
             var privatePath = path + $"{friendlyName}.pfx";
             var publicPath = path + $"{friendlyName}.cer";
@@ -232,9 +202,10 @@ namespace Common.CertificateManager
             return privatePath;
         }
 
-        public string CreateNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer, string path = @".\certs\")
+        public string CreateNewCertificate(string subjectName, string pvkPass, X509Certificate2 issuer,
+            string path = @".\certs\")
         {
-            X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
+            var generator = new X509V3CertificateGenerator();
 
             // Generate pseudo random number
             var randomGen = new CryptoApiRandomGenerator();
@@ -242,7 +213,7 @@ namespace Common.CertificateManager
 
             // Set certificate serial number
             var serialNumber =
-                BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+                BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
             generator.SetSerialNumber(serialNumber);
 
             // Set certificate subject name
@@ -291,7 +262,7 @@ namespace Common.CertificateManager
             var newCertificate = generator.Generate(signatureFactory);
 
             var store = new Pkcs12Store();
-            string friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
+            var friendlyName = newCertificate.SubjectDN.ToString().Split('=')[1];
 
             var certificateEntry = new X509CertificateEntry(newCertificate);
             // Set certificate
@@ -300,7 +271,7 @@ namespace Common.CertificateManager
             store.SetKeyEntry(
                 friendlyName,
                 new AsymmetricKeyEntry(subjectKeyPair.Private),
-                new X509CertificateEntry[] { certificateEntry });
+                new[] {certificateEntry});
 
             var privatePath = path + $"{friendlyName}.pfx";
             var publicPath = path + $"{friendlyName}.cer";

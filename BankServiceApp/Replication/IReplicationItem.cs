@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
 using System.Security.Cryptography.X509Certificates;
-using Common.Transaction;
 using Common.UserData;
 
 namespace BankServiceApp.Replication
@@ -11,18 +10,15 @@ namespace BankServiceApp.Replication
     {
         UserData = 1,
         CertificateData = 2,
-        RevokeCertificate = 4,
+        RevokeCertificate = 4
     }
 
     public interface IReplicationItem
     {
-        [DataMember]
-        ReplicationType Type { get; }
+        [DataMember] ReplicationType Type { get; }
 
-        [DataMember]
-        IClient Client { get; }
+        [DataMember] IClient Client { get; }
 
-        [DataMember]
-        X509Certificate2 Certificate { get; }
+        [DataMember] X509Certificate2 Certificate { get; }
     }
 }

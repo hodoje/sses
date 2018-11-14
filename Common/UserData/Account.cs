@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Common.Transaction;
 
 namespace Common.UserData
@@ -14,13 +9,11 @@ namespace Common.UserData
     [DataContract]
     public class Account : IAccount
     {
-        private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private decimal _balance;
+        private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
         public Account()
         {
-            
-
         }
 
         public Account(decimal initialBalance = 0m)
@@ -33,10 +26,7 @@ namespace Common.UserData
         {
             get
             {
-                if (_rwLock == null)
-                {
-                    _rwLock = new ReaderWriterLockSlim();
-                }
+                if (_rwLock == null) _rwLock = new ReaderWriterLockSlim();
                 decimal balance;
                 _rwLock.EnterReadLock();
                 {
@@ -48,14 +38,10 @@ namespace Common.UserData
             }
             private set
             {
-                if (_rwLock == null)
-                {
-                    _rwLock = new ReaderWriterLockSlim();
-                }
+                if (_rwLock == null) _rwLock = new ReaderWriterLockSlim();
                 _rwLock.EnterWriteLock();
                 {
                     _balance = value;
-
                 }
                 _rwLock.ExitWriteLock();
             }
@@ -68,7 +54,7 @@ namespace Common.UserData
 
         public void Withdraw(decimal amount)
         {
-            if(amount > Balance)
+            if (amount > Balance)
                 throw new NotEnoughResourcesException("User tried to withdraw more resources than available.");
             Balance -= amount;
         }

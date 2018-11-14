@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Security;
 using System.Security.Principal;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Common
 {
@@ -26,12 +23,10 @@ namespace Common
             if (!typeof(T).IsInterface)
                 throw new ServiceLocatorException("Invalid generic T is not interface type.");
 
-            if (!_proxies.TryGetValue(typeof(T), out object retVal))
-            {
+            if (!_proxies.TryGetValue(typeof(T), out var retVal))
                 throw new ServiceLocatorException("Service of given type is not registered.");
-            }
 
-            return (T)retVal;
+            return (T) retVal;
         }
 
         public static ChannelFactory<T> CreateSecureProxyFactory<T>(string endpoint)

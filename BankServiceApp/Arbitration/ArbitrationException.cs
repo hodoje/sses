@@ -3,7 +3,7 @@
 namespace BankServiceApp.Arbitration
 {
     public class ArbitrationException : Exception
-    { 
+    {
         public ArbitrationException(string message) : base(message)
         {
         }

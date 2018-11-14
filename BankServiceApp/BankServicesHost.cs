@@ -1,18 +1,12 @@
-﻿using BankServiceApp.BankServices;
-using Common.ServiceContracts;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
-using System.Linq;
+﻿using System;
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+using System.ServiceModel.Security;
+using BankServiceApp.BankServices;
 using BankServiceApp.ServiceHosts;
 using Common.CertificateManager;
-using System.Security.Cryptography.X509Certificates;
-using System.ServiceModel.Security;
+using Common.ServiceContracts;
 
 namespace BankServiceApp
 {
@@ -29,13 +23,15 @@ namespace BankServiceApp
             var masterCardServiceEndpoint = $"{BankAppConfig.MyEndpoint}/{BankAppConfig.MasterCardServiceName}";
 
             _cardHost = new ServiceHost(typeof(BankMasterCardService));
-            _cardHost.AddServiceEndpoint(typeof(IBankMasterCardService), masterCardHostBinding, masterCardServiceEndpoint);
+            _cardHost.AddServiceEndpoint(typeof(IBankMasterCardService), masterCardHostBinding,
+                masterCardServiceEndpoint);
 
             #endregion
 
             #region TransactionServiceSetup
 
-            var transactionServiceCertificate = LoadServiceCertificate(BankAppConfig.BankTransactionServiceCertificatePath,
+            var transactionServiceCertificate = LoadServiceCertificate(
+                BankAppConfig.BankTransactionServiceCertificatePath,
                 BankAppConfig.BankTransactionServiceSubjectName,
                 BankAppConfig.BankTransactionServiceCertificatePassword);
 
@@ -54,11 +50,21 @@ namespace BankServiceApp
             #endregion
         }
 
+        #region IDisposable Methods
+
+        public void Dispose()
+        {
+            (_cardHost as IDisposable).Dispose();
+            (_transactionServiceHost as IDisposable).Dispose();
+        }
+
+        #endregion
+
         private NetTcpBinding SetupWindowsAuthBinding()
         {
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ProtectionLevel =
-            System.Net.Security.ProtectionLevel.EncryptAndSign;
+                ProtectionLevel.EncryptAndSign;
 
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
             return binding;
@@ -74,7 +80,7 @@ namespace BankServiceApp
 
         private X509Certificate2 LoadServiceCertificate(string path, string name, string password)
         {
-            X509Certificate2 certificate = default(X509Certificate2);
+            var certificate = default(X509Certificate2);
             try
             {
                 certificate = CertificateManager.Instance.GetPrivateCertificateFromFile($"{path}{name}.pfx", password);
@@ -95,8 +101,7 @@ namespace BankServiceApp
             }
             catch (Exception ex)
             {
-
-                Console.WriteLine("CardService failed to open with an error: {0}",ex.Message);
+                Console.WriteLine("CardService failed to open with an error: {0}", ex.Message);
             }
         }
 
@@ -108,7 +113,6 @@ namespace BankServiceApp
             }
             catch (Exception ex)
             {
-
                 Console.WriteLine("CardService failed to close with an error: {0}", ex.Message);
                 throw;
             }
@@ -122,7 +126,6 @@ namespace BankServiceApp
             }
             catch (Exception ex)
             {
-
                 Console.WriteLine("TransactionService failed to open with an error: {0}", ex.Message);
                 throw;
             }
@@ -136,7 +139,6 @@ namespace BankServiceApp
             }
             catch (Exception ex)
             {
-
                 Console.WriteLine("TransationService failed to close with an error: {0}", ex.Message);
                 throw;
             }
@@ -156,16 +158,6 @@ namespace BankServiceApp
         {
             TransactionServiceClose();
             CardServiceClose();
-        }
-
-        #endregion
-
-        #region IDisposable Methods
-
-        public void Dispose()
-        {
-            (_cardHost as IDisposable).Dispose();
-            (_transactionServiceHost as IDisposable).Dispose();
         }
 
         #endregion

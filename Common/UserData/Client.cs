@@ -3,7 +3,6 @@ using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
-using Org.BouncyCastle.Crypto.Paddings;
 
 namespace Common.UserData
 {
@@ -13,7 +12,6 @@ namespace Common.UserData
     {
         public Client()
         {
-            
         }
 
         public Client(string name, IAccount account, string pin = null)
@@ -23,13 +21,6 @@ namespace Common.UserData
             Pin = pin != null ? GetPinHash(pin) : null;
         }
 
-        [DataMember]
-        public string Name { get; set; }
-
-        [DataMember]
-        [XmlIgnore]
-        public string Pin { get; set; }
-
         [XmlElement(nameof(Pin))]
         public byte[] SerializePin
         {
@@ -37,12 +28,8 @@ namespace Common.UserData
             set => Pin = value != null ? Encoding.ASCII.GetString(value) : null;
         }
 
-        [DataMember]
-        [XmlIgnore]
-        public IAccount Account { get; set; }
-
         /// <summary>
-        /// Used for serialization purposes
+        ///     Used for serialization purposes
         /// </summary>
         [IgnoreDataMember]
         public decimal Balance
@@ -50,6 +37,12 @@ namespace Common.UserData
             get => Account.Balance;
             set => Account = new Account(value);
         }
+
+        [DataMember] public string Name { get; set; }
+
+        [DataMember] [XmlIgnore] public string Pin { get; set; }
+
+        [DataMember] [XmlIgnore] public IAccount Account { get; set; }
 
         public virtual void ResetPin(string oldPin, string newPin)
         {
@@ -61,10 +54,7 @@ namespace Common.UserData
             {
                 var oldPinHash = GetPinHash(oldPin);
 
-                if (Pin.Equals(oldPinHash, StringComparison.OrdinalIgnoreCase))
-                {
-                    Pin = GetPinHash(newPin);
-                }
+                if (Pin.Equals(oldPinHash, StringComparison.OrdinalIgnoreCase)) Pin = GetPinHash(newPin);
             }
         }
 

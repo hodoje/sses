@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Common.Transaction
 {
@@ -13,7 +9,6 @@ namespace Common.Transaction
     {
         public Transaction()
         {
-            
         }
 
         public Transaction(TransactionType type, decimal amount, string pin)
@@ -23,13 +18,10 @@ namespace Common.Transaction
             Pin = pin;
         }
 
-        [DataMember]
-        public TransactionType TransactionType { get; private set; }
+        [DataMember] public TransactionType TransactionType { get; private set; }
 
-        [DataMember]
-        public decimal Amount { get; private set; }
+        [DataMember] public decimal Amount { get; private set; }
 
-        [DataMember]
-        public string Pin { get; private set; }
+        [DataMember] public string Pin { get; private set; }
     }
 }

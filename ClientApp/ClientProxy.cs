@@ -1,130 +1,56 @@
-﻿using Common.CertificateManager;
-using Common.DataEncapsulation;
-using Common.ServiceContracts;
-using Common.Transaction;
-using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
+﻿using System;
 using System.Net.Security;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
-using System.ServiceModel.Channels;
 using System.ServiceModel.Security;
-using System.Text;
-using System.Threading.Tasks;
 using Common;
+using Common.CertificateManager;
+using Common.DataEncapsulation;
+using Common.ServiceContracts;
+using Common.Transaction;
 
 namespace ClientApp
 {
     public class ClientProxy : IBankMasterCardService, IBankTransactionService
     {
-        private IBankMasterCardService _cardServiceProxy = null;
-        private EndpointAddress _cardServiceEndpointAddress = null;
+        private EndpointAddress _cardServiceEndpointAddress;
+        private readonly IBankMasterCardService _cardServiceProxy;
+
+        private X509Certificate2 _serverCertificate;
+        private EndpointAddress _transactionServiceEndpointAddress;
 
         private IBankTransactionService _transactionServiceProxy;
         private ChannelFactory<IBankTransactionService> _transactionServiceProxyFactory;
-        private EndpointAddress _transactionServiceEndpointAddress = null;
 
-        private X509Certificate2 _serverCertificate;
-
-        public ClientProxy(string username,SecureString password)
+        public ClientProxy(string username, SecureString password)
         {
-            int i = 0;
+            var i = 0;
             while (true)
             {
-                SetUpEndpoints(i++%2);
-                var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(SetUpWindowsAuthBinding(), _cardServiceEndpointAddress);
+                SetUpEndpoints(i++ % 2);
+                var cardServiceFactory =
+                    new ChannelFactory<IBankMasterCardService>(SetUpWindowsAuthBinding(), _cardServiceEndpointAddress);
                 cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
                 cardServiceFactory.Credentials.Windows.ClientCredential.SecurePassword = password;
-                this._cardServiceProxy = cardServiceFactory.CreateChannel();
-                if (this._cardServiceProxy.CheckState() != ServiceState.Hot)
+                _cardServiceProxy = cardServiceFactory.CreateChannel();
+                if (_cardServiceProxy.CheckState() != ServiceState.Hot)
                 {
-                    ((IClientChannel)this._cardServiceProxy).Close();
+                    ((IClientChannel) _cardServiceProxy).Close();
                     cardServiceFactory.Close();
                 }
-                else break;
+                else
+                {
+                    break;
+                }
             }
-            this._cardServiceProxy.Login();
-        }
 
-        private void SetUpEndpoints(int i)
-        {
-   
-            _cardServiceEndpointAddress = new EndpointAddress(
-                new Uri(ClientAppConfig.MasterCardServiceAddress[i]));
-
-            _serverCertificate = CertificateManager.Instance.GetCertificateFromStore(
-                StoreLocation.LocalMachine, 
-                StoreName.Root,
-                ClientAppConfig.ServiceCertificateCN);
-
-            _transactionServiceEndpointAddress = new EndpointAddress(
-                new Uri(ClientAppConfig.TransactionServiceAddress[i]),
-                new X509CertificateEndpointIdentity(_serverCertificate));
-        }
-
-        public void OpenTransactionServiceProxy(X509Certificate2 clientCertificate)
-        {
-            _transactionServiceProxyFactory =
-                new ChannelFactory<IBankTransactionService>(SetupCertAuthBinding(), _transactionServiceEndpointAddress);
-            _transactionServiceProxyFactory.Credentials.ClientCertificate.Certificate = clientCertificate;
-            _transactionServiceProxy = _transactionServiceProxyFactory.CreateChannel();
-        }
-
-        private NetTcpBinding SetUpWindowsAuthBinding()
-        {
-            var binding = new NetTcpBinding(SecurityMode.Transport);
-            binding.Security.Transport.ProtectionLevel =
-            System.Net.Security.ProtectionLevel.EncryptAndSign;
-            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
-
-            return binding;
-        }
-
-        private NetTcpBinding SetupCertAuthBinding()
-        {
-            var binding = new NetTcpBinding(SecurityMode.Transport);
-            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Certificate;
-            binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
-            return binding;
-        }
-
-        public bool ExecuteTransaction(byte[] signature, ITransaction transaction)
-        {
-            bool Result = false;
-
-            try
-            {
-                Result = _transactionServiceProxy.ExecuteTransaction(signature,transaction);
-            }
-            catch (FaultException ex)
-            {
-
-                Console.WriteLine("Error: {0}", ex.Message);
-            }
-            return Result;
-        }
-
-        public decimal CheckBalance(byte[] signature, ITransaction transaction)
-        {
-            decimal Result = 0;
-            try
-            {
-                Result = _transactionServiceProxy.CheckBalance(signature, transaction);
-            }
-            catch (FaultException ex)
-            {
-                Console.WriteLine("Error: {0}", ex.Message);
-            }
-            return Result;
+            _cardServiceProxy.Login();
         }
 
         public NewCardResults RequestNewCard(string password)
         {
-            NewCardResults newCardResults = new NewCardResults();
+            var newCardResults = new NewCardResults();
             try
             {
                 newCardResults = _cardServiceProxy.RequestNewCard(password);
@@ -133,7 +59,7 @@ namespace ClientApp
             {
                 Console.WriteLine("Error: {0}", ex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("Error: {0}", ex.Message);
                 Console.ReadLine();
@@ -144,14 +70,13 @@ namespace ClientApp
 
         public bool RevokeExistingCard(string pin)
         {
-            bool Result = false;
+            var Result = false;
             try
             {
                 Result = _cardServiceProxy.RevokeExistingCard(pin);
             }
             catch (FaultException ex)
             {
-
                 Console.WriteLine("Error: {0}", ex.Message);
             }
 
@@ -160,7 +85,7 @@ namespace ClientApp
 
         public NewCardResults RequestResetPin()
         {
-            NewCardResults newCardResults = new NewCardResults();
+            var newCardResults = new NewCardResults();
             try
             {
                 newCardResults = _cardServiceProxy.RequestResetPin();
@@ -207,18 +132,89 @@ namespace ClientApp
 
         public bool ExtendCard(string password)
         {
-            bool Result = false;
+            var Result = false;
             try
             {
                 Result = _cardServiceProxy.ExtendCard(password);
             }
             catch (FaultException ex)
             {
-
-                Console.WriteLine("Error: {0}",ex.Message);
+                Console.WriteLine("Error: {0}", ex.Message);
             }
 
             return Result;
+        }
+
+        public bool ExecuteTransaction(byte[] signature, ITransaction transaction)
+        {
+            var Result = false;
+
+            try
+            {
+                Result = _transactionServiceProxy.ExecuteTransaction(signature, transaction);
+            }
+            catch (FaultException ex)
+            {
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+
+            return Result;
+        }
+
+        public decimal CheckBalance(byte[] signature, ITransaction transaction)
+        {
+            decimal Result = 0;
+            try
+            {
+                Result = _transactionServiceProxy.CheckBalance(signature, transaction);
+            }
+            catch (FaultException ex)
+            {
+                Console.WriteLine("Error: {0}", ex.Message);
+            }
+
+            return Result;
+        }
+
+        private void SetUpEndpoints(int i)
+        {
+            _cardServiceEndpointAddress = new EndpointAddress(
+                new Uri(ClientAppConfig.MasterCardServiceAddress[i]));
+
+            _serverCertificate = CertificateManager.Instance.GetCertificateFromStore(
+                StoreLocation.LocalMachine,
+                StoreName.Root,
+                ClientAppConfig.ServiceCertificateCN);
+
+            _transactionServiceEndpointAddress = new EndpointAddress(
+                new Uri(ClientAppConfig.TransactionServiceAddress[i]),
+                new X509CertificateEndpointIdentity(_serverCertificate));
+        }
+
+        public void OpenTransactionServiceProxy(X509Certificate2 clientCertificate)
+        {
+            _transactionServiceProxyFactory =
+                new ChannelFactory<IBankTransactionService>(SetupCertAuthBinding(), _transactionServiceEndpointAddress);
+            _transactionServiceProxyFactory.Credentials.ClientCertificate.Certificate = clientCertificate;
+            _transactionServiceProxy = _transactionServiceProxyFactory.CreateChannel();
+        }
+
+        private NetTcpBinding SetUpWindowsAuthBinding()
+        {
+            var binding = new NetTcpBinding(SecurityMode.Transport);
+            binding.Security.Transport.ProtectionLevel =
+                ProtectionLevel.EncryptAndSign;
+            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+
+            return binding;
+        }
+
+        private NetTcpBinding SetupCertAuthBinding()
+        {
+            var binding = new NetTcpBinding(SecurityMode.Transport);
+            binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Certificate;
+            binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
+            return binding;
         }
     }
 }

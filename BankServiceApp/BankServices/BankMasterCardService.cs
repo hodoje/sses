@@ -1,40 +1,84 @@
-﻿using Common.CertificateManager;
-using Common.DataEncapsulation;
-using Common.ServiceContracts;
-using System;
-using System.IO;
+﻿using System;
+using System.Diagnostics;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Permissions;
 using System.ServiceModel;
 using System.Threading;
+using System.Threading.Tasks;
 using BankServiceApp.AccountStorage;
 using BankServiceApp.Arbitration;
-using Common;
-using Common.UserData;
-using System.Threading.Tasks;
 using BankServiceApp.Replication;
+using Common;
+using Common.CertificateManager;
+using Common.DataEncapsulation;
+using Common.EventLogData;
+using Common.ServiceContracts;
+using Common.UserData;
 
 namespace BankServiceApp.BankServices
 {
     public class BankMasterCardService : IBankMasterCardService
     {
-        private readonly ICache _bankCache;
+        private readonly string
+            _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
+
         private readonly IArbitrationServiceProvider _arbitrationServiceProvider;
+        private readonly ICache _bankCache;
         private readonly IReplicator _replicatorProxy;
-        private readonly string _applicationName = BankAppConfig.BankName;//System.AppDomain.CurrentDomain.FriendlyName;
-        
+
         public BankMasterCardService()
         {
             var caCertificate = CertificateManager.Instance.GetCACertificate();
-            if (caCertificate == null)
-            {
-                throw new Exception("Certificate manager returned null for CA certificate.");
-            }
+            if (caCertificate == null) throw new Exception("Certificate manager returned null for CA certificate.");
 
             _bankCache = ServiceLocator.GetInstance<ICache>();
             _arbitrationServiceProvider = ServiceLocator.GetInstance<IArbitrationServiceProvider>();
             _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
+        }
+
+        private string GenerateRandomPin()
+        {
+            var newPin = "";
+
+            var randomValues = new Random((int) DateTime.Now.Ticks);
+
+            for (var i = 0; i < 4; ++i)
+                newPin += randomValues.Next(0, 9).ToString();
+
+            return newPin;
+        }
+
+        private string ExtractUsernameFromFullName(string fullName)
+        {
+            var index = fullName.LastIndexOf("\\");
+            return fullName.Substring(index + 1, fullName.Length - index - 1);
+        }
+
+        private static bool RevokeCertificate(string clientName)
+        {
+            var success = false;
+
+            var subject = $"CN={clientName}";
+
+            using (var store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+            {
+                store.Open(OpenFlags.MaxAllowed);
+                // Returns all certificates containing substring with subject name
+                //Eg. clientname, clientname2, clientname3 are returned when just clientname is queried
+                var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, clientName, true);
+
+                foreach (var certificate in certificates)
+                    if (subject.Equals(certificate.Subject))
+                    {
+                        store.Remove(certificate);
+                        success = true;
+                    }
+
+                store.Close();
+            }
+
+            return success;
         }
 
         #region IBankMasterCardService Methods
@@ -42,9 +86,7 @@ namespace BankServiceApp.BankServices
         public NewCardResults RequestNewCard(string password)
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
-            {
                 throw new SecurityException("Principal isn't part of Clients role.");
-            }
 
             try
             {
@@ -54,19 +96,19 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Request for new card!",
-                    System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Request for new card!",
+                        EventLogEntryType.Information));
                 });
 
                 RevokeCertificate(clientName);
 
                 var CACertificate = CertificateManager.Instance.GetCACertificate();
                 CertificateManager.Instance.CreateAndStoreNewCertificate(
-                    clientName, 
-                    password, 
+                    clientName,
+                    password,
                     CACertificate,
                     BankAppConfig.BankTransactionServiceCertificatePath);
 
@@ -75,12 +117,9 @@ namespace BankServiceApp.BankServices
                     StoreName.My,
                     clientName);
 
-                if (cert == null)
-                {
-                    throw new ArgumentNullException(nameof(cert));
-                }
+                if (cert == null) throw new ArgumentNullException(nameof(cert));
 
-                var resultData = new NewCardResults()
+                var resultData = new NewCardResults
                 {
                     PinCode = GenerateRandomPin()
                 };
@@ -90,33 +129,33 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Successfully created a card!",
-                    System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Successfully created a card!",
+                        EventLogEntryType.Information));
                 });
 
                 _bankCache.StoreData();
-                
+
                 var replicationData = new ReplicationItem(
-                    client, 
-                    ReplicationType.UserData | ReplicationType.CertificateData, 
+                    client,
+                    ReplicationType.UserData | ReplicationType.CertificateData,
                     cert);
                 _replicatorProxy.ReplicateData(replicationData);
 
 
                 return resultData;
             }
-            catch(ArgumentNullException ane)
+            catch (ArgumentNullException ane)
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                         _applicationName,
                         Thread.CurrentPrincipal.Identity.Name,
                         ane.Message,
-                        System.Diagnostics.EventLogEntryType.Error));
+                        EventLogEntryType.Error));
                 });
 
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"));
@@ -126,16 +165,14 @@ namespace BankServiceApp.BankServices
         public bool RevokeExistingCard(string pin)
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
-            {
                 throw new SecurityException("Client isn't in required role.");
-            }
 
             try
             {
                 // Check if client exists
                 var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
                 var client = default(IClient);
-                client = BankCache.GetClientFromCache(_bankCache,clientName);
+                client = BankCache.GetClientFromCache(_bankCache, clientName);
 
                 if (client == null)
                     return false;
@@ -146,68 +183,63 @@ namespace BankServiceApp.BankServices
                     Console.WriteLine($"Client {clientName} requested card revocation.");
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                                _applicationName,
-                                clientName,
-                                "Requested card revocation.",
-                                System.Diagnostics.EventLogEntryType.Information));
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                            _applicationName,
+                            clientName,
+                            "Requested card revocation.",
+                            EventLogEntryType.Information));
                     });
 
                     var cert = CertificateManager.Instance.GetCertificateFromStore(
                         StoreLocation.LocalMachine,
-                        StoreName.My, 
+                        StoreName.My,
                         clientName);
 
-                    if (cert == null)
-                    {
-                        return false;
-                    }
+                    if (cert == null) return false;
 
-                    bool revoked = RevokeCertificate(clientName);
+                    var revoked = RevokeCertificate(clientName);
 
                     if (revoked)
                     {
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                            ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                                 _applicationName,
                                 clientName,
                                 "Successfully revoked the card.",
-                                System.Diagnostics.EventLogEntryType.Information));
+                                EventLogEntryType.Information));
                         });
 
                         var replicationData = new ReplicationItem(
-                            null, 
-                            ReplicationType.CertificateData | ReplicationType.RevokeCertificate, 
+                            null,
+                            ReplicationType.CertificateData | ReplicationType.RevokeCertificate,
                             cert);
                         _replicatorProxy.ReplicateData(replicationData);
                     }
 
                     return revoked;
                 }
-                else
-                {
-                    Task.Run(() =>
-                    {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                                _applicationName,
-                                clientName,
-                                "Invalid pin.",
-                                System.Diagnostics.EventLogEntryType.Error));
-                    });
 
-                    throw new SecurityException("Invalid pin.");
-                }
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Invalid pin.",
+                        EventLogEntryType.Error));
+                });
+
+                throw new SecurityException("Invalid pin.");
             }
             catch (ArgumentNullException ane)
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            Thread.CurrentPrincipal.Identity.Name,
-                            ane.Message,
-                            System.Diagnostics.EventLogEntryType.Error));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        Thread.CurrentPrincipal.Identity.Name,
+                        ane.Message,
+                        EventLogEntryType.Error));
                 });
 
                 throw;
@@ -217,11 +249,9 @@ namespace BankServiceApp.BankServices
         public NewCardResults RequestResetPin()
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
-            {
                 throw new SecurityException("Client isn't in required role.");
-            }
 
-            string clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
+            var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
             try
             {
                 var client = BankCache.GetClientFromCache(_bankCache, clientName);
@@ -230,39 +260,38 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                                _applicationName,
-                                clientName,
-                                "Requested pin reset.",
-                                System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Requested pin reset.",
+                        EventLogEntryType.Information));
                 });
 
-                var results = new NewCardResults() {PinCode = GenerateRandomPin()};
+                var results = new NewCardResults {PinCode = GenerateRandomPin()};
 
                 client.ResetPin(null, results.PinCode);
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            clientName,
-                            "New pin generated.",
-                            System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "New pin generated.",
+                        EventLogEntryType.Information));
                 });
 
                 _replicatorProxy.ReplicateData(new ReplicationItem(client));
 
                 return results;
-
             }
             catch (ArgumentNullException ane)
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            clientName,
-                            ane.Message,
-                            System.Diagnostics.EventLogEntryType.Error));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        ane.Message,
+                        EventLogEntryType.Error));
                 });
 
                 throw new ArgumentNullException(ane.Message);
@@ -277,11 +306,11 @@ namespace BankServiceApp.BankServices
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                         _applicationName,
                         clientName,
                         $"({nameof(BankServiceApp)}) [BankMasterCardService] Client isn't part of Clients group.",
-                        System.Diagnostics.EventLogEntryType.FailureAudit));
+                        EventLogEntryType.FailureAudit));
                 });
                 throw new SecurityException("Principal isn't part of Clients role.");
             }
@@ -292,11 +321,11 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Requested extension.",
-                    System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Requested extension.",
+                        EventLogEntryType.Information));
                 });
 
                 RevokeCertificate(clientName);
@@ -318,11 +347,11 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Successfully extended the card.",
-                    System.Diagnostics.EventLogEntryType.Information));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Successfully extended the card.",
+                        EventLogEntryType.Information));
                 });
 
                 var replicationItem = new ReplicationItem(null, ReplicationType.CertificateData, newCert);
@@ -334,11 +363,11 @@ namespace BankServiceApp.BankServices
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                         _applicationName,
                         Thread.CurrentPrincipal.Identity.Name,
                         ane.Message,
-                        System.Diagnostics.EventLogEntryType.Error));
+                        EventLogEntryType.Error));
                 });
 
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
@@ -353,26 +382,24 @@ namespace BankServiceApp.BankServices
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            Thread.CurrentPrincipal.Identity.Name,
-                            "User isn't in Clients role.",
-                            System.Diagnostics.EventLogEntryType.Error));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        Thread.CurrentPrincipal.Identity.Name,
+                        "User isn't in Clients role.",
+                        EventLogEntryType.Error));
                 });
 
                 throw new SecurityException("User isn't in Clients role.");
             }
-            else
+
+            Task.Run(() =>
             {
-                Task.Run(() =>
-                {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            Thread.CurrentPrincipal.Identity.Name,
-                            "Successfully logged in.",
-                            System.Diagnostics.EventLogEntryType.Information));
-                });
-            }
+                ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                    _applicationName,
+                    Thread.CurrentPrincipal.Identity.Name,
+                    "Successfully logged in.",
+                    EventLogEntryType.Information));
+            });
         }
 
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Clients")]
@@ -382,51 +409,5 @@ namespace BankServiceApp.BankServices
         }
 
         #endregion
-
-        private string GenerateRandomPin()
-        {
-            string newPin = "";
-
-            Random randomValues = new Random((int)DateTime.Now.Ticks);
-            
-            for (int i = 0; i < 4; ++i)
-                newPin += randomValues.Next(0, 9).ToString();
-
-            return newPin;
-        }
-
-        private string ExtractUsernameFromFullName(string fullName)
-        {
-            var index = fullName.LastIndexOf("\\");
-            return fullName.Substring(index + 1, fullName.Length - index - 1);
-        }
-
-        private static bool RevokeCertificate(string clientName)
-        {
-            var success = false;
-
-            var subject = $"CN={clientName}";
-
-            using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
-            {
-                store.Open(OpenFlags.MaxAllowed);
-                // Returns all certificates containing substring with subject name
-                //Eg. clientname, clientname2, clientname3 are returned when just clientname is queried
-                var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, clientName, true);
-
-                foreach (var certificate in certificates)
-                {
-                    if (subject.Equals(certificate.Subject))
-                    {
-                        store.Remove(certificate);
-                        success = true;
-                    }
-                }
-
-                store.Close();
-            }
-
-            return success;
-        }
     }
 }

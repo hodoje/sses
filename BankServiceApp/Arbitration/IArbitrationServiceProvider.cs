@@ -6,6 +6,7 @@ namespace BankServiceApp.Arbitration
 {
     public interface IArbitrationServiceProvider : IDisposable
     {
+        ServiceState State { get; }
         void RegisterService(IServiceHost service);
 
         void UnRegisterService(IServiceHost service);
@@ -13,7 +14,5 @@ namespace BankServiceApp.Arbitration
         void OpenServices();
 
         void CloseServices();
-
-        ServiceState State { get; }
     }
 }

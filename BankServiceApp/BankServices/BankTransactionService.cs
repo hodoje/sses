@@ -1,34 +1,32 @@
-﻿using Common.ServiceContracts;
-using Common.Transaction;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics;
 using System.IdentityModel.Claims;
 using System.IdentityModel.Policy;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using BankServiceApp.AccountStorage;
 using BankServiceApp.Replication;
 using Common;
 using Common.CertificateManager;
-using Common.UserData;
+using Common.EventLogData;
+using Common.ServiceContracts;
+using Common.Transaction;
 
 namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        private readonly ICache _bankCache;
-        private readonly IReplicator _replicatorProxy;
+        private readonly string
+            _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
 
-        private readonly string _applicationName = BankAppConfig.BankName;//System.AppDomain.CurrentDomain.FriendlyName;
+        private readonly ICache _bankCache;
+
+        private readonly IReplicator _replicatorProxy;
         //private static StopWatch
 
 
@@ -40,7 +38,7 @@ namespace BankServiceApp.BankServices
 
         public decimal CheckBalance(byte[] signature, ITransaction transaction)
         {
-            string clientName = GetClientNameFromAuthContext(ServiceSecurityContext.Current.AuthorizationContext);
+            var clientName = GetClientNameFromAuthContext(ServiceSecurityContext.Current.AuthorizationContext);
 
             var hash = HashData(transaction);
             VerifySignature(signature, hash, clientName);
@@ -49,11 +47,11 @@ namespace BankServiceApp.BankServices
 
             Task.Run(() =>
             {
-                ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                _applicationName,
-                clientName,
-                "Requested check balance.",
-                System.Diagnostics.EventLogEntryType.Information));
+                ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                    _applicationName,
+                    clientName,
+                    "Requested check balance.",
+                    EventLogEntryType.Information));
             });
 
             if (client != null)
@@ -62,11 +60,11 @@ namespace BankServiceApp.BankServices
                 {
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                        _applicationName,
-                        clientName,
-                        "Invalid Pin.",
-                        System.Diagnostics.EventLogEntryType.Error));
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                            _applicationName,
+                            clientName,
+                            "Invalid Pin.",
+                            EventLogEntryType.Error));
                     });
 
                     throw new SecurityException("Invalid Pin.");
@@ -76,11 +74,11 @@ namespace BankServiceApp.BankServices
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Client not found in cache. Possibly using old certificate.",
-                    System.Diagnostics.EventLogEntryType.Error));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Client not found in cache. Possibly using old certificate.",
+                        EventLogEntryType.Error));
                 });
 
                 throw new FaultException("Client not found in cache. Possibly using old certificate.");
@@ -99,21 +97,19 @@ namespace BankServiceApp.BankServices
             var client = BankCache.GetClientFromCache(_bankCache, clientName);
 
             if (client != null)
-            {
                 if (!client.CheckPin(transaction.Pin))
                 {
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                        _applicationName,
-                        clientName,
-                        "Invalid Pin.",
-                        System.Diagnostics.EventLogEntryType.Error));
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                            _applicationName,
+                            clientName,
+                            "Invalid Pin.",
+                            EventLogEntryType.Error));
                     });
 
                     throw new SecurityException("Invalid Pin.");
                 }
-            }
 
             var success = false;
 
@@ -125,11 +121,11 @@ namespace BankServiceApp.BankServices
 
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                        _applicationName,
-                        clientName,
-                        $"Deposit made with {transaction.Amount}$ amount.",
-                        System.Diagnostics.EventLogEntryType.Information));
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                            _applicationName,
+                            clientName,
+                            $"Deposit made with {transaction.Amount}$ amount.",
+                            EventLogEntryType.Information));
                     });
 
                     break;
@@ -141,13 +137,14 @@ namespace BankServiceApp.BankServices
 
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            clientName,
-                            $"Withdrawal made with {transaction.Amount}$ amount.",
-                            System.Diagnostics.EventLogEntryType.Information));
+                            ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                                _applicationName,
+                                clientName,
+                                $"Withdrawal made with {transaction.Amount}$ amount.",
+                                EventLogEntryType.Information));
                         });
                     }
+
                     break;
                 default:
                     throw new InvalidOperationException("Invalid operation. For check balance use dedicated method.");
@@ -181,14 +178,13 @@ namespace BankServiceApp.BankServices
             if (!localCert.GetRSAPublicKey()
                 .VerifyHash(hash, signature, HashAlgorithmName.SHA512, RSASignaturePadding.Pkcs1))
             {
-
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
-                    _applicationName,
-                    clientName,
-                    "Invalid transaction signature.",
-                    System.Diagnostics.EventLogEntryType.Error));
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        clientName,
+                        "Invalid transaction signature.",
+                        EventLogEntryType.Error));
                 });
 
                 throw new SecurityException("Invalid transaction signature.");
@@ -198,11 +194,11 @@ namespace BankServiceApp.BankServices
         private byte[] HashData<T>(T data)
         {
             byte[] hash;
-            using (SHA512Cng hasAlg = new SHA512Cng())
+            using (var hasAlg = new SHA512Cng())
             {
                 using (var stream = new MemoryStream())
                 {
-                    BinaryFormatter formatter = new BinaryFormatter();
+                    var formatter = new BinaryFormatter();
                     formatter.Serialize(stream, data);
 
                     hash = hasAlg.ComputeHash(stream);

@@ -1,23 +1,17 @@
-﻿using Common.CertificateManager;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Security.Principal;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using BankServiceApp.AccountStorage;
 using BankServiceApp.Arbitration;
 using BankServiceApp.Replication;
 using Common;
-using System.DirectoryServices.AccountManagement;
+using Common.CertificateManager;
 using Common.ServiceContracts;
 
 namespace BankServiceApp
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var principal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
             if (!principal.IsInRole("BankServices"))
@@ -34,11 +28,11 @@ namespace BankServiceApp
                 using (IArbitrationServiceProvider arbitrationService = new ArbitrationServiceProvider())
                 {
                     ServiceLocator.RegisterService(arbitrationService);
-                    using (ReplicatorProxy replicatorProxy = new ReplicatorProxy())
+                    using (var replicatorProxy = new ReplicatorProxy())
                     {
                         ProxyPool.RegisterProxy<IReplicator>(replicatorProxy);
 
-                        using (BankAuditServiceProxy auditProxy = new BankAuditServiceProxy())
+                        using (var auditProxy = new BankAuditServiceProxy())
                         {
                             ProxyPool.RegisterProxy<IBankAuditService>(auditProxy);
 

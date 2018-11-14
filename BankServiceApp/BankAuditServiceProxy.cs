@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Security;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
-using Common;
 using Common.EventLogData;
 using Common.ServiceContracts;
 
@@ -13,8 +8,8 @@ namespace BankServiceApp
 {
     public class BankAuditServiceProxy : IBankAuditService, IDisposable
     {
-        private ChannelFactory<IBankAuditService> _channelFactory;
         private IBankAuditService _auditProxy;
+        private ChannelFactory<IBankAuditService> _channelFactory;
 
         public BankAuditServiceProxy()
         {
@@ -22,7 +17,7 @@ namespace BankServiceApp
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
 
-            EndpointAddress address = new EndpointAddress(BankAppConfig.BankAuditServiceEndpoint);
+            var address = new EndpointAddress(BankAppConfig.BankAuditServiceEndpoint);
 
             _channelFactory = new ChannelFactory<IBankAuditService>(binding, address);
         }
@@ -31,10 +26,7 @@ namespace BankServiceApp
         {
             try
             {
-                if (_auditProxy == null)
-                {
-                    _auditProxy = _channelFactory.CreateChannel();
-                }
+                if (_auditProxy == null) _auditProxy = _channelFactory.CreateChannel();
                 _auditProxy.Log(eventLogData);
             }
             catch (Exception e)

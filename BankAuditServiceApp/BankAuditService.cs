@@ -1,9 +1,9 @@
-﻿using Common.ServiceContracts;
-using System;
-using Common.EventLogData;
+﻿using System;
 using System.Diagnostics;
 using System.ServiceModel;
 using System.Threading;
+using Common.EventLogData;
+using Common.ServiceContracts;
 
 namespace BankAuditServiceApp
 {
@@ -21,8 +21,8 @@ namespace BankAuditServiceApp
                 // Giving OS the time to register the source
                 Thread.Sleep(50);
             }
-            
-            using (EventLog log = new EventLog(_logName))
+
+            using (var log = new EventLog(_logName))
             {
                 log.MachineName = Environment.MachineName;
                 log.Source = eventLogData.BankName;
