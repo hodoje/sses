@@ -9,7 +9,6 @@ namespace BankServiceApp.Replication
 
     [ServiceContract]
     [ServiceKnownType(typeof(ReplicationItem))]
-    [ServiceKnownType(typeof(Transaction))]
     [ServiceKnownType(typeof(Client))]
     [ServiceKnownType(typeof(Account))]
     public interface IReplicator

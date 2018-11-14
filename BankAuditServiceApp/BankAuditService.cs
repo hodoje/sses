@@ -21,6 +21,7 @@ namespace BankAuditServiceApp
                 // Giving OS the time to register the source
                 Thread.Sleep(50);
             }
+            
             using (EventLog log = new EventLog(_logName))
             {
                 log.MachineName = Environment.MachineName;

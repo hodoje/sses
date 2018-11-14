@@ -59,9 +59,15 @@ namespace BankServiceApp.Replication
                     {
                         if (_replicatorProxy != null)
                         {
-                            while (_replicationQueue.TryDequeue(out IReplicationItem replicationItem))
+                            while (!_replicationQueue.IsEmpty)
                             {
-                                _replicatorProxy.ReplicateData(replicationItem);
+                                // Check connection before replicating to keep replication data 
+                                // on queue in case backup service fails
+                                _replicatorProxy.CheckState();
+                                if (_replicationQueue.TryDequeue(out IReplicationItem replicationItem))
+                                {
+                                    _replicatorProxy.ReplicateData(replicationItem);
+                                }
                             }
                         }
                         else
@@ -150,9 +156,8 @@ namespace BankServiceApp.Replication
             if (!_disposed && BankAppConfig.InstanceNo > 1)
             {
                 _disposed = true;
-                _replicationTokenSource.Cancel();
-                _replicationThread.Interrupt();
 
+                _replicationTokenSource.Cancel();
                 _threadFinishedEvent.WaitOne(10000);
 
                 _replicationTokenSource.Dispose();

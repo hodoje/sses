@@ -14,7 +14,7 @@ namespace Common.UserData
     [DataContract]
     public class Account : IAccount
     {
-        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private decimal _balance;
 
         public Account()
@@ -33,6 +33,10 @@ namespace Common.UserData
         {
             get
             {
+                if (_rwLock == null)
+                {
+                    _rwLock = new ReaderWriterLockSlim();
+                }
                 decimal balance;
                 _rwLock.EnterReadLock();
                 {
@@ -44,6 +48,10 @@ namespace Common.UserData
             }
             private set
             {
+                if (_rwLock == null)
+                {
+                    _rwLock = new ReaderWriterLockSlim();
+                }
                 _rwLock.EnterWriteLock();
                 {
                     _balance = value;

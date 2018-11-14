@@ -55,41 +55,50 @@ namespace ClientApp
                     Console.WriteLine("3.Check balance.");
                     Console.WriteLine("4.Revoke your MasterCard.");
                     Console.WriteLine("5.Request new MasterCard.");
-                    Console.WriteLine("6.Extend your MasterCard.");
+                    Console.WriteLine("6.Renew your MasterCard.");
                     Console.WriteLine("7.Reset your pin code.");
                     Console.WriteLine("8.Exit");
                     odg = Console.ReadLine();
-
-                    switch (odg?[0])
+                    try
                     {
-                        case '0':
-                            InsertMasterCard();
-                            break;
-                        case '1': //Withdrawal
-                            Withdraw();
-                            break;
 
-                        case '2': //Deposit
-                            Deposit();
-                            break;
 
-                        case '3': //CheckBalance
-                            CheckBalance();
-                            break;
+                        switch (odg?[0])
+                        {
+                            case '0':
+                                InsertMasterCard();
+                                break;
+                            case '1': //Withdrawal
+                                Withdraw();
+                                break;
 
-                        case '4': //Revoke MasterCard
-                            RevokeMasterCard();
-                            break;
+                            case '2': //Deposit
+                                Deposit();
+                                break;
 
-                        case '5': //Request new MasterCard
-                            RequestNewMasterCard();
-                            break;
-                        case '6'://Extend MasterCard
-                            ExtendMasterCard();
-                            break;
-                        case '7': //Reset Pin
-                            ResetPin();
-                            break;
+                            case '3': //CheckBalance
+                                CheckBalance();
+                                break;
+
+                            case '4': //Revoke MasterCard
+                                RevokeMasterCard();
+                                break;
+
+                            case '5': //Request new MasterCard
+                                RequestNewMasterCard();
+                                break;
+                            case '6': //Extend MasterCard
+                                RenewMasterCard();
+                                break;
+                            case '7': //Reset Pin
+                                ResetPin();
+                                break;
+                        }
+
+                    }
+                    catch (SecurityAccessDeniedException e)
+                    {
+                        Console.WriteLine(e.Message);
                     }
 
                     Console.ReadLine();
@@ -98,6 +107,7 @@ namespace ClientApp
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+                Console.ReadLine();
             }
         }
 
@@ -140,6 +150,7 @@ namespace ClientApp
                 pass.AppendChar(key.KeyChar);
                 Console.Write("*");
             };
+            Console.WriteLine();
 
             return pass;
         }
@@ -355,7 +366,7 @@ namespace ClientApp
             }
         }
 
-        private static void ExtendMasterCard()
+        private static void RenewMasterCard()
         {
             Console.WriteLine("Enter key encryption password of your MasterCard:");
             string password = Console.ReadLine();
@@ -363,7 +374,7 @@ namespace ClientApp
             cert = TryGetPrivateCertificate(_privateCertPath, password);
             if (cert == null)
             {
-                Console.WriteLine("Wrong password.");
+                Console.WriteLine("Wrong password or no card found.");
             }
             else
             {
@@ -375,6 +386,8 @@ namespace ClientApp
                     }
                     else
                         Console.WriteLine("Unsuccessfully extesion.");
+
+                    _clientCertificate = null;
                 }
                 else
                 {

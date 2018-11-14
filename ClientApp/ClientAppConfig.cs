@@ -13,15 +13,13 @@ namespace ClientApp
         public const string InstanceNumberConfigName = "Instances";
         public const string MasterCardServiceConfigName = "MasterCardServiceEndpointName";
         public const string TransactionServiceConfigName = "TransactionServiceEndpointName";
-        public const string MasterCardServiceAddressName = "MasterCardServiceAddress";
-        public const string TransactionServiceAddressName = "TransactionServiceAddress";
         public const string ServiceCertificateCNName = "ServiceCertificateCN";
         public const string CertificatePathName = "CertificatePath";
 
         static ClientAppConfig()
         {
-            MasterCardServiceName = ConfigurationManager.AppSettings.Get(MasterCardServiceAddressName);
-            TransactionServiceName = ConfigurationManager.AppSettings.Get(TransactionServiceAddressName);
+            MasterCardServiceName = ConfigurationManager.AppSettings.Get(MasterCardServiceConfigName);
+            TransactionServiceName = ConfigurationManager.AppSettings.Get(TransactionServiceConfigName);
             ServiceCertificateCN = ConfigurationManager.AppSettings.Get(ServiceCertificateCNName);
             CertificatePath = ConfigurationManager.AppSettings.Get(CertificatePathName);
             InstanceNo = int.Parse(ConfigurationManager.AppSettings.Get(InstanceNumberConfigName));
@@ -34,8 +32,8 @@ namespace ClientApp
             TransactionServiceAddress = new List<string>(InstanceNo);
             for (int i = 0; i < InstanceNo; i++)
             {
-                MasterCardServiceAddress.Add($"{Endpoints[i]}\\{MasterCardServiceName}");
-                TransactionServiceAddress.Add($"{Endpoints[i]}\\{TransactionServiceName}");
+                MasterCardServiceAddress.Add($"{Endpoints[i]}/{MasterCardServiceName}");
+                TransactionServiceAddress.Add($"{Endpoints[i]}/{TransactionServiceName}");
             }
 
         }

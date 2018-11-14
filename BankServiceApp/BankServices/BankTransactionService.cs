@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BankServiceApp.AccountStorage;
+using BankServiceApp.Replication;
 using Common;
 using Common.CertificateManager;
 using Common.UserData;
@@ -24,14 +25,17 @@ namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        private ICache _bankCache;
-        private readonly string applicationName = System.AppDomain.CurrentDomain.FriendlyName;
+        private readonly ICache _bankCache;
+        private readonly IReplicator _replicatorProxy;
+
+        private readonly string _applicationName = BankAppConfig.BankName;//System.AppDomain.CurrentDomain.FriendlyName;
         //private static StopWatch
 
 
         public BankTransactionService()
         {
             _bankCache = ServiceLocator.GetInstance<ICache>();
+            _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
         }
 
         public decimal CheckBalance(byte[] signature, ITransaction transaction)
@@ -45,8 +49,8 @@ namespace BankServiceApp.BankServices
 
             Task.Run(() =>
             {
-                ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                applicationName,
+                ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                _applicationName,
                 clientName,
                 "Requested check balance.",
                 System.Diagnostics.EventLogEntryType.Information));
@@ -58,8 +62,8 @@ namespace BankServiceApp.BankServices
                 {
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                        applicationName,
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                        _applicationName,
                         clientName,
                         "Invalid Pin.",
                         System.Diagnostics.EventLogEntryType.Error));
@@ -72,8 +76,8 @@ namespace BankServiceApp.BankServices
             {
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                    applicationName,
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                    _applicationName,
                     clientName,
                     "Client not found in cache. Possibly using old certificate.",
                     System.Diagnostics.EventLogEntryType.Error));
@@ -84,7 +88,6 @@ namespace BankServiceApp.BankServices
 
             return client.Account.Balance;
         }
-
 
         public bool ExecuteTransaction(byte[] signature, ITransaction transaction)
         {
@@ -101,8 +104,8 @@ namespace BankServiceApp.BankServices
                 {
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                        applicationName,
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                        _applicationName,
                         clientName,
                         "Invalid Pin.",
                         System.Diagnostics.EventLogEntryType.Error));
@@ -122,8 +125,8 @@ namespace BankServiceApp.BankServices
 
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                        applicationName,
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                        _applicationName,
                         clientName,
                         $"Deposit made with {transaction.Amount}$ amount.",
                         System.Diagnostics.EventLogEntryType.Information));
@@ -138,8 +141,8 @@ namespace BankServiceApp.BankServices
 
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                            applicationName,
+                            ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                            _applicationName,
                             clientName,
                             $"Withdrawal made with {transaction.Amount}$ amount.",
                             System.Diagnostics.EventLogEntryType.Information));
@@ -148,6 +151,12 @@ namespace BankServiceApp.BankServices
                     break;
                 default:
                     throw new InvalidOperationException("Invalid operation. For check balance use dedicated method.");
+            }
+
+            if (success)
+            {
+                _bankCache.StoreData();
+                _replicatorProxy.ReplicateData(new ReplicationItem(client));
             }
 
             return success;
@@ -175,8 +184,8 @@ namespace BankServiceApp.BankServices
 
                 Task.Run(() =>
                 {
-                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                    applicationName,
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new Common.EventLogData.EventLogData(
+                    _applicationName,
                     clientName,
                     "Invalid transaction signature.",
                     System.Diagnostics.EventLogEntryType.Error));

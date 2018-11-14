@@ -26,6 +26,7 @@ namespace BankServiceApp.Arbitration
         private Thread _stateCheckerThread;
         private CancellationTokenSource _stateCheckerTokenSource;
         private AutoResetEvent _stateCheckerThreadFinishedEvent;
+
         public ArbitrationServiceProvider()
         {
             if(BankAppConfig.InstanceNo < 1 || BankAppConfig.InstanceNo > 2)
@@ -72,7 +73,7 @@ namespace BankServiceApp.Arbitration
                 {
                     foreach (var endpoint in BankAppConfig.Endpoints.Where(x => !x.Equals(BankAppConfig.MyEndpoint)))
                     {
-                        var factory = ProxyPool.CreateSecureProxyFactory<IReplicator>(endpoint);
+                        var factory = ProxyPool.CreateSecureProxyFactory<IReplicator>($"{endpoint}/{BankAppConfig.ReplicatorName}");
                         try
                         {
                             var proxy = factory.CreateChannel();
@@ -81,17 +82,26 @@ namespace BankServiceApp.Arbitration
                                 success = true;
                             }
                         }
+#if DEBUG
+                        catch(Exception ex)
+                        {
+                            Console.WriteLine(
+                                $"({nameof(BankServiceApp)}) [{nameof(ArbitrationServiceProvider)}] Failed to establish connection to replication service at {endpoint}. Reason: {ex.Message}");
+                        }
+#else
                         catch
                         {
                             Console.WriteLine(
                                 $"({nameof(BankServiceApp)}) [{nameof(ArbitrationServiceProvider)}] Failed to establish connection to replication service at {endpoint}.");
                         }
+#endif
                     }
 
                     if (!success)
                     {
                         Console.WriteLine($"Switching state from {State} to {ServiceState.Hot}");
                         State = ServiceState.Hot;
+                        OpenServices();
                     }
 
                     success = false;
@@ -178,7 +188,6 @@ namespace BankServiceApp.Arbitration
                     if (BankAppConfig.InstanceNo > 1)
                     {
                         _stateCheckerTokenSource.Cancel();
-                        _stateCheckerThread.Interrupt();
                         _stateCheckerThreadFinishedEvent.WaitOne(10000);
                     }
 

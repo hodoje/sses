@@ -19,9 +19,10 @@ namespace BankServiceApp
     {
         static void Main(string[] args)
         {
-            if (!Thread.CurrentPrincipal.IsInRole("BankServices"))
+            var principal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
+            if (!principal.IsInRole("BankServices"))
             {
-                Console.WriteLine("Only user in BankServices role can run BankServiceApp.");
+                Console.WriteLine($"Only user in BankServices role can run {nameof(BankServiceApp)}");
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadLine();
                 return;
@@ -34,22 +35,25 @@ namespace BankServiceApp
                 {
                     ServiceLocator.RegisterService(arbitrationService);
                     using (ReplicatorProxy replicatorProxy = new ReplicatorProxy())
-                    using (BankAuditServiceProxy auditProxy = new BankAuditServiceProxy())
                     {
-                        ProxyPool.RegisterProxy<IBankAuditService>(auditProxy);
                         ProxyPool.RegisterProxy<IReplicator>(replicatorProxy);
 
-                        if (CertificateManager.Instance.GetCACertificate() == null)
+                        using (BankAuditServiceProxy auditProxy = new BankAuditServiceProxy())
                         {
-                            var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
-                                BankAppConfig.CACertificatePath,
-                                BankAppConfig.CACertificatePass);
-                            CertificateManager.Instance.SetCACertificate(caCertificate);
-                        }
+                            ProxyPool.RegisterProxy<IBankAuditService>(auditProxy);
 
-                        arbitrationService.RegisterService(new BankServicesHost());
-                        arbitrationService.OpenServices();
-                        Console.ReadLine();
+                            if (CertificateManager.Instance.GetCACertificate() == null)
+                            {
+                                var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
+                                    BankAppConfig.CACertificatePath,
+                                    BankAppConfig.CACertificatePass);
+                                CertificateManager.Instance.SetCACertificate(caCertificate);
+                            }
+
+                            arbitrationService.RegisterService(new BankServicesHost());
+                            arbitrationService.OpenServices();
+                            Console.ReadLine();
+                        }
                     }
                 }
             }
