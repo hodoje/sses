@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 
 namespace BankServiceApp
@@ -18,6 +19,8 @@ namespace BankServiceApp
         public const string CACertificatePassConfigName = "CACertificatePass";
         public const string BankCachePathConfigName = "BankCachePath";
         public const string BankServiceNameConfigName = "BankServiceName";
+        public const string TimeIntervalForAuditCheckConfigName = "TimeIntervalForWithdrawalAuditCheck";
+        public const string NumberOfWithdrawalAuditCheckConfigName = "NumberOfWithdrawalForAuditCheck";
 
         static BankAppConfig()
         {
@@ -42,6 +45,9 @@ namespace BankServiceApp
             CACertificatePass = ConfigurationManager.AppSettings.Get(CACertificatePassConfigName);
             BankCachePath = ConfigurationManager.AppSettings.Get(BankCachePathConfigName);
             BankName = ConfigurationManager.AppSettings.Get(BankServiceNameConfigName);
+
+            TimeIntervalForAudidChecking = Int32.Parse(ConfigurationManager.AppSettings.Get(TimeIntervalForAuditCheckConfigName));
+            WithdrawLimitForAudit = Int32.Parse(ConfigurationManager.AppSettings.Get(NumberOfWithdrawalAuditCheckConfigName));
         }
 
         public static string ReplicatorName { get; }
@@ -61,6 +67,10 @@ namespace BankServiceApp
         public static string BankTransactionServiceSubjectName { get; }
 
         public static string BankTransactionServiceCertificatePassword { get; }
+
+        public static int TimeIntervalForAudidChecking { get; }
+
+        public static int WithdrawLimitForAudit { get; }
 
         public static string CACertificatePath { get; }
 

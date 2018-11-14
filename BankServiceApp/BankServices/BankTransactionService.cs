@@ -23,8 +23,8 @@ namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        private static readonly double timeInterval = 60.0;
-        private static readonly int withdrawLimitForAudit = 5;
+        private static readonly double timeInterval = BankAppConfig.TimeIntervalForAudidChecking;
+        private static readonly int withdrawLimitForAudit = BankAppConfig.WithdrawLimitForAudit;
 
         private System.Timers.Timer checkingTimer = new System.Timers.Timer(timeInterval);
 
@@ -58,6 +58,9 @@ namespace BankServiceApp.BankServices
             _bankCache = ServiceLocator.GetInstance<ICache>();
             _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
             checkingTimer.Elapsed += new System.Timers.ElapsedEventHandler(CheckingTimerLogic);
+
+            checkingTimer.AutoReset = true;
+            checkingTimer.Enabled = true;
         }
 
         public decimal CheckBalance(byte[] signature, ITransaction transaction)
