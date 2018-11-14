@@ -32,7 +32,7 @@ namespace ClientApp
             try
             {
                 _clientProxy = new ClientProxy(_username, _password);
-                _clientProxy.Login();
+
 
                 _privateCertPath = $"{ClientAppConfig.CertificatePath}{_username}.pfx";
                 _publicCertPath = _privateCertPath.Replace(".pfx", ".cer");

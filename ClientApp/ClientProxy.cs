@@ -32,17 +32,29 @@ namespace ClientApp
 
         public ClientProxy(string username,SecureString password)
         {
-            SetUpEndpoints();
-            var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(SetUpWindowsAuthBinding(), _cardServiceEndpointAddress);
-            cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
-            cardServiceFactory.Credentials.Windows.ClientCredential.SecurePassword = password;
-            this._cardServiceProxy = cardServiceFactory.CreateChannel();
+            int i = 0;
+            while (true)
+            {
+                SetUpEndpoints(i++%2);
+                var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(SetUpWindowsAuthBinding(), _cardServiceEndpointAddress);
+                cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
+                cardServiceFactory.Credentials.Windows.ClientCredential.SecurePassword = password;
+                this._cardServiceProxy = cardServiceFactory.CreateChannel();
+                if (this._cardServiceProxy.CheckState() != ServiceState.Hot)
+                {
+                    ((IClientChannel)this._cardServiceProxy).Close();
+                    cardServiceFactory.Close();
+                }
+                else break;
+            }
+            this._cardServiceProxy.Login();
         }
 
-        private void SetUpEndpoints()
+        private void SetUpEndpoints(int i)
         {
+   
             _cardServiceEndpointAddress = new EndpointAddress(
-                new Uri(ClientAppConfig.MasterCardServiceAddress));
+                new Uri(ClientAppConfig.MasterCardServiceAddress[i]));
 
             _serverCertificate = CertificateManager.Instance.GetCertificateFromStore(
                 StoreLocation.LocalMachine, 
@@ -50,7 +62,7 @@ namespace ClientApp
                 ClientAppConfig.ServiceCertificateCN);
 
             _transactionServiceEndpointAddress = new EndpointAddress(
-                new Uri(ClientAppConfig.TransactionServiceAddress),
+                new Uri(ClientAppConfig.TransactionServiceAddress[i]),
                 new X509CertificateEndpointIdentity(_serverCertificate));
         }
 
