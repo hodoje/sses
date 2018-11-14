@@ -5,6 +5,7 @@ using System.Net.Security;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using Common;
 using Common.EventLogData;
 using Common.ServiceContracts;
 
@@ -24,6 +25,8 @@ namespace BankServiceApp
             EndpointAddress address = new EndpointAddress(BankAppConfig.BankAuditServiceEndpoint);
 
             _channelFactory = new ChannelFactory<IBankAuditService>(binding, address);
+
+            ProxyPool.RegisterProxy(this);
         }
 
         public void Log(EventLogData eventLogData)

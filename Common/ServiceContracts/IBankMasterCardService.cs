@@ -23,6 +23,9 @@ namespace Common.ServiceContracts
         [FaultContract(typeof(CustomServiceException))]
         NewCardResults RequestNewCard(string password);
 
+        [OperationContract]
+        bool ExtendCard(string password);
+
         /// <summary>
         /// Revoke existing certificate given to client.
         /// </summary>

@@ -204,5 +204,10 @@ namespace ClientApp
 
             return ServiceState.Standby;
         }
+
+        public bool ExtendCard(string password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

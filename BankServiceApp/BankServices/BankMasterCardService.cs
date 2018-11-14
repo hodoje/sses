@@ -11,6 +11,7 @@ using BankServiceApp.AccountStorage;
 using BankServiceApp.Arbitration;
 using Common;
 using Common.UserData;
+using System.Threading.Tasks;
 
 namespace BankServiceApp.BankServices
 {
@@ -18,6 +19,7 @@ namespace BankServiceApp.BankServices
     {
         private readonly ICache _bankCache;
         private readonly IArbitrationServiceProvider _arbitrationServiceProvider;
+        private readonly string applicationName = System.AppDomain.CurrentDomain.FriendlyName;
 
         public BankMasterCardService()
         {
@@ -63,12 +65,30 @@ namespace BankServiceApp.BankServices
                 var client = BankCache.GetClientFromCache(_bankCache, clientName);
                 client.ResetPin(null, resultData.PinCode);
 
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                    applicationName,
+                    clientName,
+                    "Successfully created a card!",
+                    System.Diagnostics.EventLogEntryType.Information));
+                });
+
                 _bankCache.StoreData();
 
                 return resultData;
             }
             catch(ArgumentNullException ane)
             {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                        applicationName,
+                        Thread.CurrentPrincipal.Identity.Name,
+                        ane.Message,
+                        System.Diagnostics.EventLogEntryType.Error));
+                });
+
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
                     $"{ane.Message} was null!");
             }
@@ -95,18 +115,57 @@ namespace BankServiceApp.BankServices
                 if (client.CheckPin(pin))
                 {
                     Console.WriteLine($"Client {clientName} requested card revocation.");
+                    Task.Run(() =>
+                    {
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                                applicationName,
+                                clientName,
+                                "Requested card revocation.",
+                                System.Diagnostics.EventLogEntryType.Information));
+                    });
 
-                    return RevokeCertificate(clientName);
+                    bool revoked = RevokeCertificate(clientName);
+
+                    if(revoked)
+                    {
+                        Task.Run(() =>
+                        {
+                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                                applicationName,
+                                clientName,
+                                "Successfully revoked the card.",
+                                System.Diagnostics.EventLogEntryType.Information));
+                        });
+                    }
+
+                    return revoked;
                 }
                 else
                 {
+                    Task.Run(() =>
+                    {
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                                applicationName,
+                                clientName,
+                                "Invalid pin.",
+                                System.Diagnostics.EventLogEntryType.Error));
+                    });
+
                     throw new SecurityException("Invalid pin.");
                 }
             }
             catch (ArgumentNullException ane)
             {
-                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
-                    $"{ane.Message} was null!");
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            applicationName,
+                            Thread.CurrentPrincipal.Identity.Name,
+                            ane.Message,
+                            System.Diagnostics.EventLogEntryType.Error));
+                });
+
+                throw new ArgumentNullException(ane.Message);
             }
         }
 
@@ -151,17 +210,43 @@ namespace BankServiceApp.BankServices
                 var client = BankCache.GetClientFromCache(_bankCache, clientName);
 
                 Console.WriteLine("Client requested pin reset.");
+
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                                applicationName,
+                                clientName,
+                                "Requested pin reset.",
+                                System.Diagnostics.EventLogEntryType.Information));
+                });
+
                 var results = new NewCardResults() {PinCode = GenerateRandomPin()};
 
                 client.ResetPin(null, results.PinCode);
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            applicationName,
+                            clientName,
+                            "New pin generated.",
+                            System.Diagnostics.EventLogEntryType.Information));
+                });
 
                 return results;
 
             }
             catch (ArgumentNullException ane)
             {
-                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
-                    $"{ane.Message} was null!");
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            applicationName,
+                            clientName,
+                            ane.Message,
+                            System.Diagnostics.EventLogEntryType.Error));
+                });
+
+                throw new ArgumentNullException(ane.Message);
             }
         }
 
@@ -170,12 +255,27 @@ namespace BankServiceApp.BankServices
             var principal = Thread.CurrentPrincipal;
             if (!principal.IsInRole("Clients"))
             {
-                // Audit failed login
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            applicationName,
+                            Thread.CurrentPrincipal.Identity.Name,
+                            "User isn't in Clients role.",
+                            System.Diagnostics.EventLogEntryType.Error));
+                });
+
                 throw new SecurityException("User isn't in Clients role.");
             }
             else
             {
-                // Audit success login
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                            applicationName,
+                            Thread.CurrentPrincipal.Identity.Name,
+                            "Successfully logged in.",
+                            System.Diagnostics.EventLogEntryType.Information));
+                });
             }
         }
 
@@ -205,5 +305,9 @@ namespace BankServiceApp.BankServices
             return fullName.Substring(index + 1, fullName.Length - index - 1);
         }
 
+        public bool ExtendCard(string password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
