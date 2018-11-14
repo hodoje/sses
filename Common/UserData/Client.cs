@@ -3,6 +3,7 @@ using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
+using Org.BouncyCastle.Crypto.Paddings;
 
 namespace Common.UserData
 {
@@ -26,7 +27,15 @@ namespace Common.UserData
         public string Name { get; set; }
 
         [DataMember]
+        [XmlIgnore]
         public string Pin { get; set; }
+
+        [XmlElement(nameof(Pin))]
+        public byte[] SerializePin
+        {
+            get => Encoding.ASCII.GetBytes(Pin);
+            set => Pin = Encoding.ASCII.GetString(value);
+        }
 
         [DataMember]
         [XmlIgnore]

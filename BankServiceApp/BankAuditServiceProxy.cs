@@ -12,7 +12,7 @@ namespace BankServiceApp
 {
     public class BankAuditServiceProxy : IBankAuditService, IDisposable
     {
-        private readonly ChannelFactory<IBankAuditService> _channelFactory;
+        private ChannelFactory<IBankAuditService> _channelFactory;
         private IBankAuditService _auditProxy;
 
         public BankAuditServiceProxy()
@@ -44,7 +44,8 @@ namespace BankServiceApp
 
         public void Dispose()
         {
-            (_channelFactory as IDisposable).Dispose();
+            _channelFactory = null;
+            _auditProxy = null;
         }
     }
 }

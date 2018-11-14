@@ -26,5 +26,15 @@ namespace BankServiceApp.AccountStorage
         /// Account interface.
         /// </returns>
         bool TryGetAccount(string clientName, out IAccount account);
+        
+        /// <summary>
+        /// Load data from configured location.
+        /// </summary>
+        void LoadData();
+
+        /// <summary>
+        /// Store cache data at configured location.
+        /// </summary>
+        void StoreData();
     }
 }

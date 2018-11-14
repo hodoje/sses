@@ -33,7 +33,7 @@ namespace ClientApp
         {
 
             binding = SetUpBinding();
-            //SetUpEndpointAddress();
+            SetUpEndpoints();
             //transactionServiceFactory = ChannelFactory<IBankTransactionService>.CreateChannel(binding, transactionServiceEndpointAddress);
             var cardServiceFactory = new ChannelFactory<IBankMasterCardService>(binding, cardServiceEndpointAddress);
             cardServiceFactory.Credentials.Windows.ClientCredential.UserName = username;
@@ -44,11 +44,15 @@ namespace ClientApp
 
      
 
-        private void SetUpEndpointAddress()
+        private void SetUpEndpoints()
         {
-            servCert = CertificateManager.Instance.GetCertificateFromStore(StoreLocation.LocalMachine, StoreName.My, ClientAppConfig.CertificatePath);
             cardServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.MasterCardServiceAddress));
+
+            servCert = CertificateManager.Instance.GetCertificateFromStore(
+                StoreLocation.LocalMachine, 
+                StoreName.My,
+                ClientAppConfig.ServiceCertificateCN);
 
             transationServiceEndpointAddress = new EndpointAddress(
                 new Uri(ClientAppConfig.TransactionServiceAddress),

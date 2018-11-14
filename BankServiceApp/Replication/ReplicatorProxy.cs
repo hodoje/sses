@@ -50,6 +50,7 @@ namespace BankServiceApp.Replication
             {
                 Console.WriteLine("Only one instance of bank service is specified replicator won't start.");
             }
+            
         }
 
         private void ReplicationWorker(object param)
@@ -152,10 +153,9 @@ namespace BankServiceApp.Replication
 
         public void Dispose()
         {
-            if (!_disposed)
+            if (!_disposed && BankAppConfig.InstanceNo > 1)
             {
                 _disposed = true;
-
                 _replicationTokenSource.Cancel();
                 _replicationThread.Interrupt();
 
@@ -170,6 +170,8 @@ namespace BankServiceApp.Replication
                 while (_replicationQueue.TryDequeue(out IReplicationItem item)) ;
                 _replicationQueue = null;
             }
+
+            _arbitrationServiceProvider = null;
         }
     }
 }

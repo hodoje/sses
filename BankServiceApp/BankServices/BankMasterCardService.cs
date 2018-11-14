@@ -4,6 +4,7 @@ using Common.ServiceContracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.ServiceModel.Security;
@@ -36,113 +37,137 @@ namespace BankServiceApp.BankServices
 
         public NewCardResults RequestNewCard(string password)
         {
-            var client = Thread.CurrentPrincipal;
-            if (!client.IsInRole("Clients"))
+            if (!Thread.CurrentPrincipal.IsInRole("Clients"))
             {
-
+                throw new SecurityException("Principal isn't part of Clients role.");
             }
+
             try
             {
-                //if (AccountStorage.AccountStorage.Instance.CheckIfClientExists(clientName))
-                //{
-                //    throw new FaultException<CustomServiceException>(new CustomServiceException("You already have a card in this bank!"),
-                //        "You already have a card in this bank!");
-                //}
-                //else
-                //{
-                //    // Information that is going to be sent to client 
-                //    NewCardResults returnInfo = new NewCardResults()
-                //    {
-                //        PinCode = GenerateRandomPin()
-                //    };
+                var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
 
-                //    // Create new certificate ( MasterCard ) for client and store it
-                //    CertificateManager.Instance.CreateAndStoreNewClientCertificate(clientName,
-                //        returnInfo.PinCode, _CACertificate);
+                Console.WriteLine($"Client {clientName} requested new card.");
 
-                //    // Add client to the "database"
-                //    AccountStorage.AccountStorage.Instance.AddNewClient(clientName, returnInfo.PinCode);
+                RevokeCertificate(clientName);
 
-                //    return returnInfo;
-                //}
+                var CACertificate = CertificateManager.Instance.GetCACertificate();
+                CertificateManager.Instance.CreateAndStoreNewCertificate(
+                    clientName, 
+                    password, 
+                    CACertificate,
+                    BankAppConfig.BankTransactionServiceCertificatePath);
+
+                var resultData = new NewCardResults()
+                {
+                    PinCode = GenerateRandomPin()
+                };
+
+                var client = GetClientFromCache(clientName);
+                client.ResetPin(null, resultData.PinCode);
+
+                _bankCache.StoreData();
+
+                return resultData;
             }
             catch(ArgumentNullException ane)
             {
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
                     $"{ane.Message} was null!");
             }
-
-            return null;
         }
 
         public bool RevokeExistingCard(string pin)
         {
-            string clientName = Thread.CurrentPrincipal.Identity.Name;
+            if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                throw new SecurityException("Client isn't in required role.");
+            }
+
             try
             {
                 // Check if client exists
-                if (_bankCache.TryGetClient(clientName, out IClient client))
+                var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
+                var client = default(IClient);
+                client = GetClientFromCache(clientName);
+
+                if (client == null)
+                    return false;
+
+                // if he exists in the system, authorize him
+                if (client.CheckPin(pin))
                 {
-                    // if he exists in the system, authorize him
-                    if (client.CheckPin(pin))
-                    {
-                        // TODO CARD REVOCATION
-                        Console.WriteLine("Client requested card revocation.");
-                        return true;
-                    }
-                    // if the authorization fails, throw CustomServiceException
-                    else
-                    {
-                        throw new FaultException<CustomServiceException>(new CustomServiceException("Pin is not valid!"),
-                            "Pin is not valid!");
-                    }
+                    Console.WriteLine($"Client {clientName} requested card revocation.");
+
+                    return RevokeCertificate(clientName);
                 }
-                // if the client does not exist in the system
                 else
                 {
-                    throw new FaultException<CustomServiceException>(new CustomServiceException("You are not authenticated!"),
-                        "You are not authenticated!");
+                    throw new SecurityException("Invalid pin.");
                 }
             }
-            catch(ArgumentNullException ane)
+            catch (ArgumentNullException ane)
             {
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
                     $"{ane.Message} was null!");
             }
         }
 
+        private static bool RevokeCertificate(string clientName)
+        {
+            var success = false;
+
+            var subject = $"CN={clientName}";
+
+            using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+            {
+                store.Open(OpenFlags.MaxAllowed);
+                // Returns all certificates containing substring with subject name
+                //Eg. clientname, clientname2, clientname3 are returned when just clientname is queried
+                var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, clientName, true);
+
+                foreach (var certificate in certificates)
+                {
+                    if (subject.Equals(certificate.Subject))
+                    {
+                        store.Remove(certificate);
+                        success = true;
+                    }
+                }
+
+                store.Close();
+            }
+
+            return success;
+        }
+
         public NewCardResults RequestResetPin(string pin)
         {
-            string clientName = Thread.CurrentPrincipal.Identity.Name;
-            NewCardResults results = null;
+            if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                throw new SecurityException("Client isn't in required role.");
+            }
+
+            string clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
             try
             {
-                if (_bankCache.TryGetClient(clientName, out IClient client))
-                {
-                    // if he exists in the system, authorize him
-                    if (client.CheckPin(pin))
-                    {
-                        Console.WriteLine("Client requested pin reset.");
-                        results = new NewCardResults() { PinCode = GenerateRandomPin() };
-                        client.ResetPin(pin, results.PinCode);
+                var client = GetClientFromCache(clientName);
 
-                        return results;
-                    }
-                    // if the authorization fails, throw CustomServiceException
-                    else
-                    {
-                        throw new FaultException<CustomServiceException>(new CustomServiceException("Pin is not valid!"),
-                            "Pin is not valid!");
-                    }
+                if (client.CheckPin(pin))
+                {
+                    Console.WriteLine("Client requested pin reset.");
+                    var results = new NewCardResults() {PinCode = GenerateRandomPin()};
+
+                    client.ResetPin(pin, results.PinCode);
+
+                    return results;
                 }
-                // if the client does not exist in the system
                 else
                 {
-                    throw new FaultException<CustomServiceException>(new CustomServiceException("You are not authenticated!"),
-                        "You are not authenticated!");
+                    throw new FaultException("Invalid pin.");
                 }
+
             }
-            catch(ArgumentNullException ane)
+            catch (ArgumentNullException ane)
             {
                 throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
                     $"{ane.Message} was null!");
@@ -152,10 +177,10 @@ namespace BankServiceApp.BankServices
         public void Login()
         {
             var principal = Thread.CurrentPrincipal;
-            if (!principal.Identity.IsAuthenticated || !principal.IsInRole("Clients"))
+            if (!principal.IsInRole("Clients"))
             {
                 // Audit failed login
-                throw new SecurityAccessDeniedException("User is not authenticated or isn't in Clients role.");
+                throw new SecurityException("User isn't in Clients role.");
             }
             else
             {
@@ -176,5 +201,28 @@ namespace BankServiceApp.BankServices
 
             return newPin;
         }
+
+        private string ExtractUsernameFromFullName(string fullName)
+        {
+            var index = fullName.LastIndexOf("\\");
+            return fullName.Substring(index + 1, fullName.Length - index - 1);
+        }
+
+        private IClient GetClientFromCache(string clientName)
+        {
+            IClient client;
+            if (!_bankCache.TryGetClient(clientName, out client))
+            {
+                _bankCache.StoreData();
+                _bankCache.LoadData();
+                if (_bankCache.TryGetClient(clientName, out client))
+                {
+                    _bankCache.StoreData();
+                }
+            }
+
+            return client;
+        }
+
     }
 }
