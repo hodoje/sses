@@ -11,6 +11,7 @@ using BankServiceApp.Arbitration;
 using BankServiceApp.Replication;
 using Common;
 using System.DirectoryServices.AccountManagement;
+using Common.ServiceContracts;
 
 namespace BankServiceApp
 {
@@ -33,7 +34,9 @@ namespace BankServiceApp
                 {
                     ServiceLocator.RegisterService(arbitrationService);
                     using (ReplicatorProxy replicatorProxy = new ReplicatorProxy())
+                    using (BankAuditServiceProxy auditProxy = new BankAuditServiceProxy())
                     {
+                        ProxyPool.RegisterProxy<IBankAuditService>(auditProxy);
                         ProxyPool.RegisterProxy<IReplicator>(replicatorProxy);
 
                         if (CertificateManager.Instance.GetCACertificate() == null)

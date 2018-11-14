@@ -31,6 +31,7 @@ namespace BankServiceApp.BankServices
             {
                 throw new Exception("Certificate manager returned null for CA certificate.");
             }
+
         }
 
         #region IBankMasterCardService Methods
@@ -47,6 +48,15 @@ namespace BankServiceApp.BankServices
                 var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
 
                 Console.WriteLine($"Client {clientName} requested new card.");
+
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                    applicationName,
+                    clientName,
+                    "Request for new card!",
+                    System.Diagnostics.EventLogEntryType.Information));
+                });
 
                 RevokeCertificate(clientName);
 
@@ -307,7 +317,60 @@ namespace BankServiceApp.BankServices
 
         public bool ExtendCard(string password)
         {
-            throw new NotImplementedException();
+            if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                throw new SecurityException("Principal isn't part of Clients role.");
+            }
+
+            try
+            {
+                var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
+
+                Console.WriteLine($"Client {clientName} requested extension.");
+
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                    applicationName,
+                    clientName,
+                    "Requested extension.",
+                    System.Diagnostics.EventLogEntryType.Information));
+                });
+
+                RevokeCertificate(clientName);
+
+                var CACertificate = CertificateManager.Instance.GetCACertificate();
+                CertificateManager.Instance.CreateAndStoreNewCertificate(
+                    clientName,
+                    password,
+                    CACertificate,
+                    BankAppConfig.BankTransactionServiceCertificatePath);
+
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                    applicationName,
+                    clientName,
+                    "Successfully extended the card.",
+                    System.Diagnostics.EventLogEntryType.Information));
+                });
+
+                return true;
+            }
+            catch (ArgumentNullException ane)
+            {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
+                        applicationName,
+                        Thread.CurrentPrincipal.Identity.Name,
+                        ane.Message,
+                        System.Diagnostics.EventLogEntryType.Error));
+                });
+
+                throw new FaultException<CustomServiceException>(new CustomServiceException(ane.Message + "was null!"),
+                    $"{ane.Message} was null!");
+            }
         }
     }
 }

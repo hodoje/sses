@@ -25,8 +25,6 @@ namespace BankServiceApp
             EndpointAddress address = new EndpointAddress(BankAppConfig.BankAuditServiceEndpoint);
 
             _channelFactory = new ChannelFactory<IBankAuditService>(binding, address);
-
-            ProxyPool.RegisterProxy(this);
         }
 
         public void Log(EventLogData eventLogData)
