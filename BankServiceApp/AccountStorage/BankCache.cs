@@ -103,6 +103,11 @@ namespace BankServiceApp.AccountStorage
             }
         }
 
+        public List<Client> GetAllClients()
+        {
+            return _clients.Values.ToList();
+        }
+
         public static IClient GetClientFromCache(ICache cache, string clientName)
         {
             IClient client;
@@ -114,11 +119,6 @@ namespace BankServiceApp.AccountStorage
             }
 
             return client;
-        }
-
-        public List<Client> GetAllClients()
-        {
-            return _clients.Values.ToList();
         }
     }
 }

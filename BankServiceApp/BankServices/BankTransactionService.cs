@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.Timers;
 using BankServiceApp.AccountStorage;
 using BankServiceApp.Replication;
 using Common;
@@ -16,8 +17,6 @@ using Common.CertificateManager;
 using Common.EventLogData;
 using Common.ServiceContracts;
 using Common.Transaction;
-using Common.UserData;
-using System.Timers;
 
 namespace BankServiceApp.BankServices
 {
@@ -26,38 +25,20 @@ namespace BankServiceApp.BankServices
         private static readonly double timeInterval = BankAppConfig.TimeIntervalForAudidChecking;
         private static readonly int withdrawLimitForAudit = BankAppConfig.WithdrawLimitForAudit;
 
-        private System.Timers.Timer checkingTimer = new System.Timers.Timer(timeInterval);
-
-        private readonly string _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
+        private readonly string
+            _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
 
         private readonly ICache _bankCache;
 
         private readonly IReplicator _replicatorProxy;
 
-        private void CheckingTimerLogic(object sender, ElapsedEventArgs e)
-        {
-            foreach (var client in _bankCache.GetAllClients())
-            {
-                if (client.Withdraw >= withdrawLimitForAudit)
-                {
-                    Task.Run(() =>
-                    {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                            System.AppDomain.CurrentDomain.FriendlyName,
-                            client.Name,
-                            $"{client.Withdraw} transactions made in past {timeInterval} seconds.",
-                            System.Diagnostics.EventLogEntryType.Warning));
-                    });
-                }
-                client.Withdraw = 0;
-            }
-        }
+        private readonly Timer checkingTimer = new Timer(timeInterval);
 
         public BankTransactionService()
         {
             _bankCache = ServiceLocator.GetInstance<ICache>();
             _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
-            checkingTimer.Elapsed += new System.Timers.ElapsedEventHandler(CheckingTimerLogic);
+            checkingTimer.Elapsed += CheckingTimerLogic;
 
             checkingTimer.AutoReset = true;
             checkingTimer.Enabled = true;
@@ -148,11 +129,11 @@ namespace BankServiceApp.BankServices
 
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                        _applicationName,
-                        clientName,
-                        $"Deposit made with {transaction.Amount} amount.",
-                        System.Diagnostics.EventLogEntryType.Information));
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                            _applicationName,
+                            clientName,
+                            $"Deposit made with {transaction.Amount} amount.",
+                            EventLogEntryType.Information));
                     });
 
                     break;
@@ -162,15 +143,15 @@ namespace BankServiceApp.BankServices
                         client.Account.Withdraw(transaction.Amount);
                         ++client.Withdraw;
                         success = true;
-                        
+
 
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new Common.EventLogData.EventLogData(
-                            _applicationName,
-                            clientName,
-                            $"Withdrawal made with {transaction.Amount} amount.",
-                            System.Diagnostics.EventLogEntryType.Information));
+                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                                _applicationName,
+                                clientName,
+                                $"Withdrawal made with {transaction.Amount} amount.",
+                                EventLogEntryType.Information));
                         });
                     }
 
@@ -186,6 +167,24 @@ namespace BankServiceApp.BankServices
             }
 
             return success;
+        }
+
+        private void CheckingTimerLogic(object sender, ElapsedEventArgs e)
+        {
+            foreach (var client in _bankCache.GetAllClients())
+            {
+                if (client.Withdraw >= withdrawLimitForAudit)
+                    Task.Run(() =>
+                    {
+                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                            AppDomain.CurrentDomain.FriendlyName,
+                            client.Name,
+                            $"{client.Withdraw} transactions made in past {timeInterval} seconds.",
+                            EventLogEntryType.Warning));
+                    });
+
+                client.Withdraw = 0;
+            }
         }
 
         private static string GetClientNameFromAuthContext(AuthorizationContext context)

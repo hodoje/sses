@@ -12,6 +12,15 @@ namespace BankServiceApp.Replication
 {
     public class ReplicatorProxy : IReplicator, IDisposable
     {
+        private readonly AutoResetEvent _threadFinishedEvent = new AutoResetEvent(false);
+
+        private readonly HashSet<CommunicationState> invalidFactoryStates = new HashSet<CommunicationState>
+        {
+            CommunicationState.Closed,
+            CommunicationState.Closing,
+            CommunicationState.Faulted
+        };
+
         private IArbitrationServiceProvider _arbitrationServiceProvider;
         private bool _disposed;
 
@@ -21,14 +30,6 @@ namespace BankServiceApp.Replication
         private CancellationTokenSource _replicationTokenSource;
         private IReplicator _replicatorProxy;
         private ChannelFactory<IReplicator> _replicatorProxyFactory;
-        private readonly AutoResetEvent _threadFinishedEvent = new AutoResetEvent(false);
-
-        private readonly HashSet<CommunicationState> invalidFactoryStates = new HashSet<CommunicationState>
-        {
-            CommunicationState.Closed,
-            CommunicationState.Closing,
-            CommunicationState.Faulted
-        };
 
         public ReplicatorProxy()
         {

@@ -138,9 +138,7 @@ namespace ClientApp
                 Console.Write("*");
             }
 
-            ;
             Console.WriteLine();
-
             return pass;
         }
 

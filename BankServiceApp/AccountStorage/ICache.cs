@@ -1,6 +1,6 @@
 ﻿using System;
-using Common.UserData;
 using System.Collections.Generic;
+using Common.UserData;
 
 namespace BankServiceApp.AccountStorage
 {
@@ -31,7 +31,7 @@ namespace BankServiceApp.AccountStorage
         ///     All clients from cache.
         /// </returns>
         List<Client> GetAllClients();
-        
+
         /// <summary>
         ///     Load data from configured location.
         /// </summary>

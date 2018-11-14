@@ -16,14 +16,14 @@ namespace BankServiceApp.Arbitration
     {
         private static ServiceState _state = ServiceState.Standby;
 
+        private readonly Thread _stateCheckerThread;
+        private readonly AutoResetEvent _stateCheckerThreadFinishedEvent;
+        private readonly CancellationTokenSource _stateCheckerTokenSource;
+
         private bool _disposed;
         private List<IServiceHost> _registeredServices = new List<IServiceHost>(10);
 
         private ServiceHost _replicatorHost;
-
-        private readonly Thread _stateCheckerThread;
-        private readonly AutoResetEvent _stateCheckerThreadFinishedEvent;
-        private readonly CancellationTokenSource _stateCheckerTokenSource;
         private ReaderWriterLockSlim _stateLock = new ReaderWriterLockSlim();
 
         public ArbitrationServiceProvider()

@@ -14,8 +14,8 @@ namespace ClientApp
 {
     public class ClientProxy : IBankMasterCardService, IBankTransactionService
     {
-        private EndpointAddress _cardServiceEndpointAddress;
         private readonly IBankMasterCardService _cardServiceProxy;
+        private EndpointAddress _cardServiceEndpointAddress;
 
         private X509Certificate2 _serverCertificate;
         private EndpointAddress _transactionServiceEndpointAddress;

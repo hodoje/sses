@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Configuration;
 
 namespace BankServiceApp
@@ -46,8 +45,10 @@ namespace BankServiceApp
             BankCachePath = ConfigurationManager.AppSettings.Get(BankCachePathConfigName);
             BankName = ConfigurationManager.AppSettings.Get(BankServiceNameConfigName);
 
-            TimeIntervalForAudidChecking = Int32.Parse(ConfigurationManager.AppSettings.Get(TimeIntervalForAuditCheckConfigName));
-            WithdrawLimitForAudit = Int32.Parse(ConfigurationManager.AppSettings.Get(NumberOfWithdrawalAuditCheckConfigName));
+            TimeIntervalForAudidChecking =
+                int.Parse(ConfigurationManager.AppSettings.Get(TimeIntervalForAuditCheckConfigName));
+            WithdrawLimitForAudit =
+                int.Parse(ConfigurationManager.AppSettings.Get(NumberOfWithdrawalAuditCheckConfigName));
         }
 
         public static string ReplicatorName { get; }

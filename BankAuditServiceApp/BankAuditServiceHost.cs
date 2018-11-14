@@ -8,9 +8,9 @@ namespace BankAuditServiceApp
 {
     public class BankAuditServiceHost : IServiceHost, IDisposable
     {
-        private readonly ServiceHost _bankAuditServiceHost;
         private readonly string _bankAuditServiceAddress;
         private readonly string _bankAuditServiceEndpointName;
+        private readonly ServiceHost _bankAuditServiceHost;
         private readonly NetTcpBinding _binding;
 
         public BankAuditServiceHost()
