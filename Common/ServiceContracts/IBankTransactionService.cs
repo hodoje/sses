@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ServiceModel;
 using Common.Transaction;
 
 namespace Common.ServiceContracts
 {
     [ServiceContract]
+    [ServiceKnownType(typeof(Transaction.Transaction))]
     public interface IBankTransactionService
     {
         /// <summary>
@@ -19,8 +15,9 @@ namespace Common.ServiceContracts
         /// Remaining amount of money on the given account
         /// </returns>
         [OperationContract]
-        bool ExecuteTransaction(byte[] signiture,ITransaction transaction);
+        bool ExecuteTransaction(byte[] signiture, ITransaction transaction);
+
         [OperationContract]
-        decimal CheckBalance(byte [] signiture,ITransaction transaction);
+        decimal CheckBalance(byte [] signiture, ITransaction transaction);
     }
 }

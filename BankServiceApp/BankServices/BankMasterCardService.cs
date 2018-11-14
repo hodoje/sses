@@ -140,7 +140,7 @@ namespace BankServiceApp.BankServices
             return success;
         }
 
-        public NewCardResults RequestResetPin(string pin)
+        public NewCardResults RequestResetPin()
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
             {
@@ -152,19 +152,12 @@ namespace BankServiceApp.BankServices
             {
                 var client = GetClientFromCache(clientName);
 
-                if (client.CheckPin(pin))
-                {
-                    Console.WriteLine("Client requested pin reset.");
-                    var results = new NewCardResults() {PinCode = GenerateRandomPin()};
+                Console.WriteLine("Client requested pin reset.");
+                var results = new NewCardResults() {PinCode = GenerateRandomPin()};
 
-                    client.ResetPin(pin, results.PinCode);
+                client.ResetPin(null, results.PinCode);
 
-                    return results;
-                }
-                else
-                {
-                    throw new FaultException("Invalid pin.");
-                }
+                return results;
 
             }
             catch (ArgumentNullException ane)

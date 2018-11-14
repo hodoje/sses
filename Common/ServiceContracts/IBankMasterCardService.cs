@@ -43,7 +43,7 @@ namespace Common.ServiceContracts
         /// </returns>
         [OperationContract]
         [FaultContract(typeof(CustomServiceException))]
-        NewCardResults RequestResetPin(string oldPin);
+        NewCardResults RequestResetPin();
 
         /// <summary>
         /// Checks user credentials arrived trough windows api.

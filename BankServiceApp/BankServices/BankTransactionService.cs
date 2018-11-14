@@ -3,6 +3,7 @@ using Common.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,10 +13,10 @@ namespace BankServiceApp.BankServices
     {
         public decimal CheckBalance(byte[] signiture, ITransaction transaction)
         {
-            throw new NotImplementedException();
+            return 0m;
         }
 
-        public bool ExecuteTransaction(byte[] signiture,ITransaction transaction)
+        public bool ExecuteTransaction(byte[] signiture, ITransaction transaction)
         {
             // TODO (JOKI) WAITING ON ACCOUNT STORAGE
 

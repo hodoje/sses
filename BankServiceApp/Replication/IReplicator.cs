@@ -8,7 +8,11 @@ namespace BankServiceApp.Replication
 {
 
 
-    [ServiceContract(ProtectionLevel = ProtectionLevel.EncryptAndSign)]
+    [ServiceContract]
+    [ServiceKnownType(typeof(ReplicationItem))]
+    [ServiceKnownType(typeof(Transaction))]
+    [ServiceKnownType(typeof(Client))]
+    [ServiceKnownType(typeof(Account))]
     public interface IReplicator
     {
         [OperationContract]
