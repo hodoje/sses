@@ -11,7 +11,7 @@ namespace Common.ServiceContracts
         /// </summary>
         /// <param name="eventLogData">Object that holds required event log data.</param>
         [OperationContract]
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankService")]
+        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
         void Log(EventLogData.EventLogData eventLogData);
     }
 }
