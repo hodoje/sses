@@ -37,12 +37,18 @@ namespace BankServiceApp
                             ProxyPool.RegisterProxy<IBankAuditService>(auditProxy);
 
                             if (CertificateManager.Instance.GetCACertificate() == null)
-                            {
-                                var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
-                                    BankAppConfig.CACertificatePath,
-                                    BankAppConfig.CACertificatePass);
-                                CertificateManager.Instance.SetCACertificate(caCertificate);
-                            }
+                                try
+                                {
+                                    var caCertificate = CertificateManager.Instance.GetPrivateCertificateFromFile(
+                                        BankAppConfig.CACertificatePath,
+                                        BankAppConfig.CACertificatePass);
+                                    CertificateManager.Instance.SetCACertificate(caCertificate);
+                                }
+                                catch
+                                {
+                                    Console.ReadLine();
+                                    throw;
+                                }
 
                             arbitrationService.RegisterService(new BankServicesHost());
                             arbitrationService.OpenServices();

@@ -7,6 +7,7 @@ using System.Threading;
 using BankServiceApp.AccountStorage;
 using BankServiceApp.Arbitration;
 using Common;
+using Common.CertificateManager;
 using Common.UserData;
 
 namespace BankServiceApp.Replication
@@ -25,7 +26,6 @@ namespace BankServiceApp.Replication
 
         #region IReplicator
 
-        [OperationBehavior(Impersonation = ImpersonationOption.Required)]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
         public void ReplicateData(IReplicationItem replicationData)
         {
@@ -44,14 +44,21 @@ namespace BankServiceApp.Replication
 
         private static void RevokeOldCertificate(X509Certificate2 certificate)
         {
-            Console.WriteLine($"Replicating certificate data for {certificate.Subject}");
+            Console.WriteLine($"Revoking old certificate for {certificate.Subject}.");
             using (var store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
             {
                 store.Open(OpenFlags.MaxAllowed);
-                var foundCert = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName,
-                    certificate.SubjectName, true)?[0];
+                try
+                {
+                    var foundCert = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName,
+                        certificate.SubjectName, true)?[0];
 
-                if (foundCert != null) store.Remove(certificate);
+                    if (foundCert != null) store.Remove(certificate);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to find old certificate.");
+                }
 
                 store.Close();
             }
@@ -59,25 +66,38 @@ namespace BankServiceApp.Replication
 
         private static void RevokeOldAndPlaceNewCertificate(X509Certificate2 certificate)
         {
-            Console.WriteLine($"Replicating certificate data for {certificate.Subject}");
+            Console.WriteLine($"Revoking old and placing new certificate for {certificate.Subject}.");
             using (var store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
             {
-                store.Open(OpenFlags.MaxAllowed);
-                var foundCert = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName,
-                    certificate.SubjectName, true)?[0];
+                store.Open(OpenFlags.ReadWrite);
+                X509Certificate2 foundCert = null;
+                try
+                {
+                    foundCert = CertificateManager.Instance.GetCertificateFromStore(
+                        StoreLocation.LocalMachine,
+                        StoreName.My,
+                        certificate.Subject);
+                }
+                catch
+                {
+                    foundCert = null;
+                }
 
                 if (foundCert == null)
                 {
+                    Console.WriteLine("Old certificate not found placing new in store.");
                     store.Add(certificate);
                 }
-                else if (foundCert.SerialNumber != certificate.SerialNumber)
+                else if (foundCert?.SerialNumber != certificate?.SerialNumber)
                 {
-                    store.Remove(foundCert);
+                    store.Remove(foundCert ?? throw new NullReferenceException(nameof(foundCert)));
                     store.Add(certificate);
                 }
 
                 store.Close();
             }
+
+            Console.WriteLine("Done replicating certificate.");
         }
 
         /// <summary>
@@ -94,7 +114,6 @@ namespace BankServiceApp.Replication
             _bankCache.StoreData();
         }
 
-        [OperationBehavior(Impersonation = ImpersonationOption.Required)]
         [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "BankServices")]
         public ServiceState CheckState()
         {

@@ -1,4 +1,5 @@
-﻿using System.ServiceModel;
+﻿using System.Security.Cryptography.X509Certificates;
+using System.ServiceModel;
 using Common;
 using Common.UserData;
 
@@ -8,6 +9,7 @@ namespace BankServiceApp.Replication
     [ServiceKnownType(typeof(ReplicationItem))]
     [ServiceKnownType(typeof(Client))]
     [ServiceKnownType(typeof(Account))]
+    [ServiceKnownType(typeof(X509Certificate2))]
     public interface IReplicator
     {
         [OperationContract]

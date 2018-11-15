@@ -16,6 +16,7 @@ namespace BankServiceApp
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
 
             var address = new EndpointAddress(BankAppConfig.BankAuditServiceEndpoint);
 

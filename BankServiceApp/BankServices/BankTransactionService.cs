@@ -22,26 +22,25 @@ namespace BankServiceApp.BankServices
 {
     public class BankTransactionService : IBankTransactionService
     {
-        private static readonly double timeInterval = BankAppConfig.TimeIntervalForAudidChecking;
-        private static readonly int withdrawLimitForAudit = BankAppConfig.WithdrawLimitForAudit;
+        // Timer takes time in ms we wan't to offer user time in seconds minimum.
+        private static readonly double _timeInterval = BankAppConfig.TimeIntervalForAudidChecking * 1000;
+        private static readonly int _withdrawLimitForAudit = BankAppConfig.WithdrawLimitForAudit;
 
         private readonly string
             _applicationName = BankAppConfig.BankName; //System.AppDomain.CurrentDomain.FriendlyName;
 
         private readonly ICache _bankCache;
-
+        private readonly Timer _checkingTimer = new Timer(_timeInterval);
         private readonly IReplicator _replicatorProxy;
-
-        private readonly Timer checkingTimer = new Timer(timeInterval);
 
         public BankTransactionService()
         {
             _bankCache = ServiceLocator.GetInstance<ICache>();
             _replicatorProxy = ProxyPool.GetProxy<IReplicator>();
-            checkingTimer.Elapsed += CheckingTimerLogic;
 
-            checkingTimer.AutoReset = true;
-            checkingTimer.Enabled = true;
+            _checkingTimer.Elapsed += CheckingTimerLogic;
+            _checkingTimer.AutoReset = true;
+            _checkingTimer.Enabled = true;
         }
 
         public decimal CheckBalance(byte[] signature, ITransaction transaction)
@@ -129,7 +128,7 @@ namespace BankServiceApp.BankServices
 
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                             _applicationName,
                             clientName,
                             $"Deposit made with {transaction.Amount} amount.",
@@ -141,13 +140,20 @@ namespace BankServiceApp.BankServices
                     if (client.Account.Balance >= transaction.Amount)
                     {
                         client.Account.Withdraw(transaction.Amount);
-                        ++client.Withdraw;
+                        if (++client.Withdraw >= _withdrawLimitForAudit)
+                            Task.Run(() =>
+                            {
+                                ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                                    _applicationName,
+                                    clientName,
+                                    $"Client exceeded withdraw transaction amount by {client.Withdraw - _withdrawLimitForAudit}.",
+                                    EventLogEntryType.Information));
+                            });
                         success = true;
-
 
                         Task.Run(() =>
                         {
-                            ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                            ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                                 _applicationName,
                                 clientName,
                                 $"Withdrawal made with {transaction.Amount} amount.",
@@ -171,15 +177,16 @@ namespace BankServiceApp.BankServices
 
         private void CheckingTimerLogic(object sender, ElapsedEventArgs e)
         {
+            Console.WriteLine("Running client withdrawal transactions check.");
             foreach (var client in _bankCache.GetAllClients())
             {
-                if (client.Withdraw >= withdrawLimitForAudit)
+                if (client.Withdraw >= _withdrawLimitForAudit)
                     Task.Run(() =>
                     {
-                        ProxyPool.GetProxy<BankAuditServiceProxy>().Log(new EventLogData(
+                        ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
                             AppDomain.CurrentDomain.FriendlyName,
                             client.Name,
-                            $"{client.Withdraw} transactions made in past {timeInterval} seconds.",
+                            $"{client.Withdraw} transactions made in past {_timeInterval} seconds.",
                             EventLogEntryType.Warning));
                     });
 
@@ -212,7 +219,7 @@ namespace BankServiceApp.BankServices
                         _applicationName,
                         clientName,
                         "Invalid transaction signature.",
-                        EventLogEntryType.Error));
+                        EventLogEntryType.FailureAudit));
                 });
 
                 throw new SecurityException("Invalid transaction signature.");

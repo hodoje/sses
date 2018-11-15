@@ -156,6 +156,7 @@ namespace ClientApp
             catch (FaultException ex)
             {
                 Console.WriteLine("Error: {0}", ex.Message);
+                throw;
             }
 
             return Result;
@@ -205,6 +206,7 @@ namespace ClientApp
             binding.Security.Transport.ProtectionLevel =
                 ProtectionLevel.EncryptAndSign;
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
 
             return binding;
         }
@@ -214,6 +216,8 @@ namespace ClientApp
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Certificate;
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
+
             return binding;
         }
     }

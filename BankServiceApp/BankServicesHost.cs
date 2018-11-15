@@ -67,6 +67,8 @@ namespace BankServiceApp
                 ProtectionLevel.EncryptAndSign;
 
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
+
             return binding;
         }
 
@@ -75,6 +77,8 @@ namespace BankServiceApp
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Certificate;
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
+
             return binding;
         }
 

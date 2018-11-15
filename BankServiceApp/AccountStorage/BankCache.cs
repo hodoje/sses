@@ -33,7 +33,9 @@ namespace BankServiceApp.AccountStorage
             }
 
             // For all users set data to null
-            foreach (var userName in userNames) _clients[userName] = null;
+            foreach (var userName in userNames)
+                if (!_clients.ContainsKey(userName))
+                    _clients[userName] = null;
 
             // Try to populate client data from persistent storage
             var cacheLocation = $"{BankAppConfig.BankCachePath}{BankAppConfig.BankName}.xml";
@@ -42,9 +44,20 @@ namespace BankServiceApp.AccountStorage
                 {
                     var serializer = new XmlSerializer(typeof(List<Client>));
                     var _loadedClients = serializer.Deserialize(stream) as List<Client>;
+                    // Populate data for clients in persistent storage
                     foreach (var loadedClient in _loadedClients)
-                        if (_clients.ContainsKey(loadedClient.Name))
-                            _clients[loadedClient.Name] = loadedClient;
+                        if (_clients.TryGetValue(loadedClient.Name, out var client))
+                        {
+                            if (client != null)
+                            {
+                                client.Balance = loadedClient.Balance;
+                                client.Pin = loadedClient.Pin;
+                            }
+                            else
+                            {
+                                _clients[loadedClient.Name] = loadedClient;
+                            }
+                        }
                 }
 
             // For each client that isn't in persistent storage populate new data.

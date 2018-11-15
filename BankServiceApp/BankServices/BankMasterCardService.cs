@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Permissions;
 using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,7 +85,17 @@ namespace BankServiceApp.BankServices
         public NewCardResults RequestNewCard(string password)
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name),
+                        "Request for new card failed client isn't in client's role.",
+                        EventLogEntryType.FailureAudit));
+                });
                 throw new SecurityException("Principal isn't part of Clients role.");
+            }
 
             try
             {
@@ -102,6 +111,12 @@ namespace BankServiceApp.BankServices
                         "Request for new card!",
                         EventLogEntryType.Information));
                 });
+
+                if (CertificateManager.Instance.GetCertificateFromStore(
+                        StoreLocation.LocalMachine,
+                        StoreName.My,
+                        clientName) != null)
+                    throw new InvalidOperationException("You already have issued card.");
 
                 RevokeCertificate(clientName);
 
@@ -165,7 +180,17 @@ namespace BankServiceApp.BankServices
         public bool RevokeExistingCard(string pin)
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name),
+                        "Request for new card failed client isn't in client's role.",
+                        EventLogEntryType.FailureAudit));
+                });
                 throw new SecurityException("Client isn't in required role.");
+            }
 
             try
             {
@@ -210,9 +235,14 @@ namespace BankServiceApp.BankServices
                                 EventLogEntryType.Information));
                         });
 
+                        client.Pin = null;
+                        _bankCache.StoreData();
+
+                        // We also replicate client data since pin wa removed
                         var replicationData = new ReplicationItem(
-                            null,
-                            ReplicationType.CertificateData | ReplicationType.RevokeCertificate,
+                            client,
+                            ReplicationType.UserData | ReplicationType.CertificateData |
+                            ReplicationType.RevokeCertificate,
                             cert);
                         _replicatorProxy.ReplicateData(replicationData);
                     }
@@ -226,7 +256,7 @@ namespace BankServiceApp.BankServices
                         _applicationName,
                         clientName,
                         "Invalid pin.",
-                        EventLogEntryType.Error));
+                        EventLogEntryType.FailureAudit));
                 });
 
                 throw new SecurityException("Invalid pin.");
@@ -249,7 +279,17 @@ namespace BankServiceApp.BankServices
         public NewCardResults RequestResetPin()
         {
             if (!Thread.CurrentPrincipal.IsInRole("Clients"))
+            {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name),
+                        "Request for new card failed client isn't in client's role.",
+                        EventLogEntryType.FailureAudit));
+                });
                 throw new SecurityException("Client isn't in required role.");
+            }
 
             var clientName = ExtractUsernameFromFullName(Thread.CurrentPrincipal.Identity.Name);
             try
@@ -386,7 +426,7 @@ namespace BankServiceApp.BankServices
                         _applicationName,
                         Thread.CurrentPrincipal.Identity.Name,
                         "User isn't in Clients role.",
-                        EventLogEntryType.Error));
+                        EventLogEntryType.FailureAudit));
                 });
 
                 throw new SecurityException("User isn't in Clients role.");
@@ -402,9 +442,23 @@ namespace BankServiceApp.BankServices
             });
         }
 
-        [PrincipalPermission(SecurityAction.Demand, Authenticated = true, Role = "Clients")]
         public ServiceState CheckState()
         {
+            var principal = Thread.CurrentPrincipal;
+            if (!principal.IsInRole("Clients"))
+            {
+                Task.Run(() =>
+                {
+                    ProxyPool.GetProxy<IBankAuditService>().Log(new EventLogData(
+                        _applicationName,
+                        Thread.CurrentPrincipal.Identity.Name,
+                        "User isn't in Clients role.",
+                        EventLogEntryType.FailureAudit));
+                });
+
+                throw new SecurityException("User isn't in Clients role.");
+            }
+
             return _arbitrationServiceProvider.State;
         }
 

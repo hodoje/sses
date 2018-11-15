@@ -135,7 +135,7 @@ namespace Common.CertificateManager
             //var issuerKeyPair = DotNetUtilities.GetKeyPair(issuer.PrivateKey);
             var issuerSerialNumber = new BigInteger(issuer.GetSerialNumber());
 
-            // Sign CA key with serial
+            // Id CA key with serial
             var caKeyIdentifier = new AuthorityKeyIdentifier(
                 SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(issuerKeyPair.Public),
                 new GeneralNames(new GeneralName(issuerDN)),

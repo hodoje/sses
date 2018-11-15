@@ -4,6 +4,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.ServiceModel;
 using System.ServiceModel.Security;
 using Common.CertificateManager;
 using Common.Transaction;
@@ -56,47 +57,48 @@ namespace ClientApp
                     Console.WriteLine("7.Reset your pin code.");
                     Console.WriteLine("8.Exit");
                     odg = Console.ReadLine();
-                    try
-                    {
-                        switch (odg?[0])
+                    if (odg.Length > 0)
+                        try
                         {
-                            case '0':
-                                InsertMasterCard();
-                                break;
-                            case '1': //Withdrawal
-                                Withdraw();
-                                break;
+                            switch (odg?[0])
+                            {
+                                case '0':
+                                    InsertMasterCard();
+                                    break;
+                                case '1': //Withdrawal
+                                    Withdraw();
+                                    break;
 
-                            case '2': //Deposit
-                                Deposit();
-                                break;
+                                case '2': //Deposit
+                                    Deposit();
+                                    break;
 
-                            case '3': //CheckBalance
-                                CheckBalance();
-                                break;
+                                case '3': //CheckBalance
+                                    CheckBalance();
+                                    break;
 
-                            case '4': //Revoke MasterCard
-                                RevokeMasterCard();
-                                break;
+                                case '4': //Revoke MasterCard
+                                    RevokeMasterCard();
+                                    break;
 
-                            case '5': //Request new MasterCard
-                                RequestNewMasterCard();
-                                break;
-                            case '6': //Extend MasterCard
-                                RenewMasterCard();
-                                break;
-                            case '7': //Reset Pin
-                                ResetPin();
-                                break;
+                                case '5': //Request new MasterCard
+                                    RequestNewMasterCard();
+                                    break;
+                                case '6': //Extend MasterCard
+                                    RenewMasterCard();
+                                    break;
+                                case '7': //Reset Pin
+                                    ResetPin();
+                                    break;
+                            }
                         }
-                    }
-                    catch (SecurityAccessDeniedException e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
+                        catch (SecurityAccessDeniedException e)
+                        {
+                            Console.WriteLine(e.Message);
+                        }
 
                     Console.ReadLine();
-                } while (odg?[0] != '8');
+                } while (odg.Length == 0 || odg?[0] != '8');
             }
             catch (Exception ex)
             {
@@ -174,11 +176,17 @@ namespace ClientApp
             {
                 cert = CertificateManager.Instance.GetPrivateCertificateFromFile(pathCert, password);
             }
+#if DEBUG
             catch (Exception ex)
             {
                 //Console.WriteLine(ex.Message);
             }
-
+#else
+            catch 
+            {
+                //Console.WriteLine(ex.Message);
+            }
+#endif
             return cert;
         }
 
@@ -192,10 +200,17 @@ namespace ClientApp
                 var cert = CertificateManager.Instance.GetPublicCertificateFromFile(path);
                 return cert.Subject.Equals($"CN={username}");
             }
+#if DEBUG
             catch (Exception e)
             {
                 return false;
             }
+#else
+            catch
+            {
+                return false;
+            }
+#endif
         }
 
         private static void Withdraw()
@@ -220,11 +235,17 @@ namespace ClientApp
                 catch (SecurityAccessDeniedException ex)
                 {
                     message = ex.Message;
+                    _clientCertificate = null;
+                }
+                catch (FaultException ex)
+                {
+                    message = ex.Message;
+                    _clientCertificate = null;
                 }
                 finally
                 {
                     if (result)
-                        Console.WriteLine("Successful deposit.");
+                        Console.WriteLine("Successful withdrawal.");
                     else
                         Console.WriteLine($"Transaction declined. Reason: {message ?? "Not enough resources."}");
                 }
@@ -256,6 +277,12 @@ namespace ClientApp
                 catch (SecurityAccessDeniedException ex)
                 {
                     message = ex.Message;
+                    _clientCertificate = null;
+                }
+                catch (FaultException ex)
+                {
+                    message = ex.Message;
+                    _clientCertificate = null;
                 }
                 finally
                 {

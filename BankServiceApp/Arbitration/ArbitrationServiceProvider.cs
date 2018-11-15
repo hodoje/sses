@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Security;
 using System.ServiceModel;
-using System.ServiceModel.Description;
 using System.Threading;
 using BankServiceApp.Replication;
 using BankServiceApp.ServiceHosts;
@@ -151,12 +150,12 @@ namespace BankServiceApp.Arbitration
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
+
 
             _replicatorHost = new ServiceHost(typeof(ReplicatorService));
             _replicatorHost.AddServiceEndpoint(typeof(IReplicator), binding,
                 $"{BankAppConfig.MyEndpoint}/{BankAppConfig.ReplicatorName}");
-            _replicatorHost.Authorization.PrincipalPermissionMode = PrincipalPermissionMode.UseWindowsGroups;
-            _replicatorHost.Authorization.ImpersonateCallerForAllOperations = true;
 
             _replicatorHost.Open();
             Console.WriteLine($"Replication service open on {BankAppConfig.MyEndpoint}/{BankAppConfig.ReplicatorName}");

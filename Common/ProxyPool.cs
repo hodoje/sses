@@ -34,6 +34,8 @@ namespace Common
             var binding = new NetTcpBinding(SecurityMode.Transport);
             binding.Security.Transport.ProtectionLevel = ProtectionLevel.EncryptAndSign;
             binding.Security.Transport.ClientCredentialType = TcpClientCredentialType.Windows;
+            binding.OpenTimeout = binding.CloseTimeout = TimeSpan.FromSeconds(2);
+            binding.SendTimeout = binding.ReceiveTimeout = TimeSpan.FromSeconds(5);
 
             var factory = new ChannelFactory<T>(binding, endpoint);
             factory.Credentials.Windows.AllowedImpersonationLevel = TokenImpersonationLevel.Impersonation;

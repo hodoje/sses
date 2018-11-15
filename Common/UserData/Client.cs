@@ -22,6 +22,7 @@ namespace Common.UserData
         }
 
         [XmlElement(nameof(Pin))]
+        [IgnoreDataMember]
         public byte[] SerializePin
         {
             get => Pin != null ? Encoding.ASCII.GetBytes(Pin) : null;
