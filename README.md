@@ -2,6 +2,11 @@
 College subject - Security and safety in electroenergetic systems
 
 **NOTE:**
+  - Project not fully done. Timeline was due.
+  - Problems that stayed:
+    - After revoking the certificate, user can still login to the service and can call methods, but he shouldn't be able to even get
+    authenticated after the revocation.
+    - Backup (replication) does not work on two different computers.
   - This repository is used as a replication repository since we are using TFS repository as a main repository.
   - Each commit will have the collaborator name sticked to it.
   - List of collaborators:
